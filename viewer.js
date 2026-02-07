@@ -5,7 +5,7 @@ import { getAllSnapshots, getAllAlbums, deleteSnapshot } from './db.js';
 import {
     allData, activeFilters,
     setAllData, setAllAlbums, setAiEnabled,
-    resetFilters, getFilteredItems, getAlbumScopedItems
+    resetFilters, getFilteredItems, getAlbumScopedItems, getFilteredItemsExcluding
 } from './viewer/state.js';
 import { renderGrid, setApplyFilters as setGridApply } from './viewer/grid.js';
 import { initModal } from './viewer/modal.js';
@@ -31,7 +31,11 @@ const deleteAlbumBtn = document.getElementById('deleteAlbumBtn');
 function applyFilters() {
     const filtered = getFilteredItems();
     renderGrid(filtered);
-    renderFacets(getAlbumScopedItems());
+    renderFacets({
+        hashtagItems: getFilteredItemsExcluding('hashtag'),
+        accountItems: getFilteredItemsExcluding('account'),
+        keywordItems: getFilteredItemsExcluding('keyword')
+    });
     renderAlbumList();
 }
 

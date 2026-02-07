@@ -6,14 +6,18 @@ import { extractUsername } from './utils.js';
 let applyFiltersFn = null;
 export function setApplyFilters(fn) { applyFiltersFn = fn; }
 
-export function renderFacets(items) {
+/**
+ * @param {object} facetItems - Per-facet cross-filtered item sets:
+ *   { hashtagItems, accountItems, keywordItems }
+ */
+export function renderFacets({ hashtagItems, accountItems, keywordItems }) {
     const hashtagList = document.getElementById('hashtagList');
     const accountList = document.getElementById('accountList');
     const keywordCloud = document.getElementById('keywordCloud');
 
     // ── Hashtags ──
     const tagMap = {};
-    items.forEach(item => {
+    hashtagItems.forEach(item => {
         if (item.hashtags) {
             item.hashtags.forEach(tag => { tagMap[tag] = (tagMap[tag] || 0) + 1; });
         }
@@ -34,7 +38,7 @@ export function renderFacets(items) {
 
     // ── Accounts ──
     const accountMap = {};
-    items.forEach(item => {
+    accountItems.forEach(item => {
         const username = extractUsername(item.user);
         accountMap[username] = (accountMap[username] || 0) + 1;
     });
@@ -92,7 +96,7 @@ export function renderFacets(items) {
         activeFilters.keyword = null;
     } else {
         const keywordMap = {};
-        items.forEach(item => {
+        keywordItems.forEach(item => {
             if (item.keywords) {
                 item.keywords.forEach(keyword => { keywordMap[keyword] = (keywordMap[keyword] || 0) + 1; });
             }
