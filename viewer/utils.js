@@ -12,7 +12,7 @@ export function extractUsername(userString) {
  * Generate a filename for a snapshot image
  */
 export function generateFilename(item) {
-    const capturedUTC = item.capturedAtUTC || new Date(item.timestamp).toISOString();
+    const timeUTC = item.tweetTime || item.capturedAtUTC || new Date(item.timestamp).toISOString();
     const username = extractUsername(item.user);
-    return `${username.replace('@', '')}-${capturedUTC.replace(/[:.]/g, '-')}.png`;
+    return `${username.replace('@', '')}-${timeUTC.replace(/[:.]/g, '-')}.png`;
 }

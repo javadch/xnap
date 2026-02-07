@@ -133,6 +133,9 @@ styleEl.textContent = `
         color: rgb(113, 118, 123) !important;
         fill: currentColor !important;
     }
+    body.xnap-capturing .xnap-btn {
+        display: none !important;
+    }
 `;
 document.head.appendChild(styleEl);
 
@@ -208,9 +211,8 @@ async function captureFocalTweet(tweetEl, opts = {}) {
     // Small wait for any expand animation to settle
     await wait(400);
 
-    // Hide clip button before screenshot
-    const clipBtn = tweetEl.querySelector('.xnap-btn');
-    if (clipBtn) clipBtn.style.visibility = 'hidden';
+    // Hide ALL clip buttons before screenshot
+    document.body.classList.add('xnap-capturing');
 
     let imageDataUrl;
     try {
@@ -241,7 +243,7 @@ async function captureFocalTweet(tweetEl, opts = {}) {
         }
         imageDataUrl = await captureScreenshot(clampedRect);
     } finally {
-        if (clipBtn) clipBtn.style.visibility = 'visible';
+        document.body.classList.remove('xnap-capturing');
     }
 
     // Timestamps & fingerprint

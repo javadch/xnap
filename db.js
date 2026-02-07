@@ -1,5 +1,5 @@
 // db.js
-const DB_NAME = 'XArchiverDB';
+const DB_NAME = 'XnapDB';
 const DB_VERSION = 2;
 const STORE_NAME = 'snapshots';
 const ALBUMS_STORE = 'albums';

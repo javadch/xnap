@@ -66,7 +66,7 @@ export function openModal(item) {
             </div>
         </div>
         <div class="modal-image-container">
-            <img src="${item.image}">
+            <img src="${item.image}" data-filename="${filename}">
         </div>
         <div class="modal-content-card">
             <div class="modal-section">
@@ -94,6 +94,18 @@ export function openModal(item) {
             </div>
         </div>
     `;
+
+    // Convert data URL to File-backed blob URL so "Save As" shows the real filename
+    const modalImg = modalBody.querySelector('.modal-image-container img');
+    if (item.image && item.image.startsWith('data:')) {
+        fetch(item.image)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], filename, { type: blob.type });
+                modalImg.src = URL.createObjectURL(file);
+            })
+            .catch(() => {}); // keep data URL as fallback
+    }
 
     // Download button
     const downloadBtn = modalBody.querySelector('.download-btn');

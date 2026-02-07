@@ -6,7 +6,8 @@ export async function shareViaTelegram(item) {
     const captureTimeUTC = item.capturedAtUTC || new Date(item.timestamp).toISOString();
     const tweetTimeUTC = item.tweetTime || 'N/A';
     const username = extractUsername(item.user);
-    const filename = `${username.replace('@', '')}-${captureTimeUTC.replace(/[:.]/g, '-')}.png`;
+    const timeForFilename = item.tweetTime || captureTimeUTC;
+    const filename = `${username.replace('@', '')}-${timeForFilename.replace(/[:.]/g, '-')}.png`;
 
     const lines = [
         '\u{1F4CC} TWEET SNAPSHOT', '',

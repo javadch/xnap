@@ -51,9 +51,9 @@ export async function handleExport() {
         if (activeFilters.dateTo) manifest.filters.dateTo = activeFilters.dateTo.toISOString().split('T')[0];
 
         for (const item of displayedItems) {
-            const capturedUTC = item.capturedAtUTC || new Date(item.timestamp).toISOString();
+            const timeUTC = item.tweetTime || item.capturedAtUTC || new Date(item.timestamp).toISOString();
             const username = extractUsername(item.user);
-            const filename = `${username.replace('@', '')}-${capturedUTC.replace(/[:.]/g, '-')}.png`;
+            const filename = `${username.replace('@', '')}-${timeUTC.replace(/[:.]/g, '-')}.png`;
             const base64Data = item.image.split(',')[1];
             imagesFolder.file(filename, base64Data, { base64: true });
 
