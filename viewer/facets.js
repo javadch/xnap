@@ -1,7 +1,6 @@
 // viewer/facets.js — Hashtag, account, and keyword cloud rendering
 
 import { activeFilters, aiEnabled } from './state.js';
-import { extractUsername } from './utils.js';
 
 let applyFiltersFn = null;
 export function setApplyFilters(fn) { applyFiltersFn = fn; }
@@ -39,8 +38,8 @@ export function renderFacets({ hashtagItems, accountItems, keywordItems }) {
     // ── Accounts ──
     const accountMap = {};
     accountItems.forEach(item => {
-        const username = extractUsername(item.user);
-        accountMap[username] = (accountMap[username] || 0) + 1;
+        const handle = item.accountHandle || '';
+        if (handle) accountMap[handle] = (accountMap[handle] || 0) + 1;
     });
     const sortedAccounts = Object.entries(accountMap).sort((a, b) => b[1] - a[1]);
 

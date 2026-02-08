@@ -1,15 +1,16 @@
 // viewer/modal.js — Modal detail view
 
-import { aiEnabled } from './state.js';
+import { aiEnabled, removeDataItem } from './state.js';
 import { generateFilename } from './utils.js';
 import { shareViaTelegram } from './share.js';
+import { deleteSnapshot } from '../db.js';
 
 const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modalBody');
 
 export function openModal(item) {
-    const captureTimeUTC = item.capturedAtUTC || new Date(item.timestamp).toISOString();
-    const tweetTimeUTC = item.tweetTime || 'N/A';
+    const captureTimeUTC = item.capturedAtUTC;
+    const tweetTimeUTC = item.tweetTimeUTC || 'N/A';
     const filename = generateFilename(item);
 
     const hashtagChips = item.hashtags && item.hashtags.length > 0
@@ -40,7 +41,7 @@ export function openModal(item) {
 
     modalBody.innerHTML = `
         <div class="modal-top-row">
-            <h2>${item.user}</h2>
+            <h2>${item.accountName || item.accountHandle || 'Unknown'} <span class="modal-handle">${item.accountHandle || ''}</span></h2>
         </div>
         <div class="modal-timestamps">
             <div class="timestamps-left">
@@ -57,11 +58,17 @@ export function openModal(item) {
                 <button class="modal-action-btn download-btn" data-image="${item.image}" data-filename="${filename}" title="Download image">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                 </button>
+                <button class="modal-action-btn json-btn" title="Copy JSON metadata">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M5 3h2v2H5v5a2 2 0 01-2 2 2 2 0 012 2v5h2v2H5c-1.07-.27-2-.9-2-2v-4a2 2 0 00-2-2H0v-2h1a2 2 0 002-2V5a2 2 0 012-2m14 0a2 2 0 012 2v4a2 2 0 002 2h1v2h-1a2 2 0 00-2 2v4a2 2 0 01-2 2h-2v-2h2v-5a2 2 0 012-2 2 2 0 01-2-2V5h-2V3h2z"/></svg>
+                </button>
+                <button class="modal-action-btn share-btn" data-id="${item.id}" title="Share via Telegram">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                </button>
                 <a href="${item.url}" target="_blank" class="modal-action-btn" title="View original tweet">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 </a>
-                <button class="modal-action-btn share-btn" data-id="${item.id}" title="Share via Telegram">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                <button class="modal-action-btn delete-btn" title="Delete snapshot">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
             </div>
         </div>
@@ -107,6 +114,33 @@ export function openModal(item) {
             .catch(() => {}); // keep data URL as fallback
     }
 
+    // JSON copy button
+    const jsonBtn = modalBody.querySelector('.json-btn');
+    jsonBtn.addEventListener('click', async () => {
+        const record = {
+            id: item.id, filename, url: item.url,
+            accountHandle: item.accountHandle,
+            accountName: item.accountName,
+            accountId: item.accountId || null,
+            text: item.text, summary: item.summary,
+            hashtags: item.hashtags, keywords: item.keywords,
+            tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
+            fingerprint: item.fingerprint,
+            albumId: item.albumId || null
+        };
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(record, null, 2));
+            jsonBtn.title = 'Copied!';
+            jsonBtn.classList.add('copied');
+            setTimeout(() => {
+                jsonBtn.title = 'Copy JSON metadata';
+                jsonBtn.classList.remove('copied');
+            }, 1500);
+        } catch (err) {
+            console.error('Copy JSON failed:', err);
+        }
+    });
+
     // Download button
     const downloadBtn = modalBody.querySelector('.download-btn');
     downloadBtn.addEventListener('click', () => {
@@ -121,6 +155,22 @@ export function openModal(item) {
     // Share button
     const shareBtn = modalBody.querySelector('.share-btn');
     shareBtn.addEventListener('click', () => shareViaTelegram(item));
+
+    // Delete button
+    const deleteBtn = modalBody.querySelector('.delete-btn');
+    deleteBtn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete this snapshot?')) {
+            try {
+                await deleteSnapshot(item.id);
+                removeDataItem(item.id);
+                modal.classList.add('hidden');
+                document.dispatchEvent(new CustomEvent('snapshot-deleted'));
+            } catch (err) {
+                console.error('Delete failed:', err);
+                alert('Failed to delete snapshot');
+            }
+        }
+    });
 
     // Copy-to-clipboard on section icons
     modalBody.querySelectorAll('.copy-icon').forEach(icon => {

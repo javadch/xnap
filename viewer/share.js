@@ -1,17 +1,16 @@
 // viewer/share.js — Share via Telegram
 
-import { extractUsername } from './utils.js';
-
 export async function shareViaTelegram(item) {
-    const captureTimeUTC = item.capturedAtUTC || new Date(item.timestamp).toISOString();
-    const tweetTimeUTC = item.tweetTime || 'N/A';
-    const username = extractUsername(item.user);
-    const timeForFilename = item.tweetTime || captureTimeUTC;
-    const filename = `${username.replace('@', '')}-${timeForFilename.replace(/[:.]/g, '-')}.png`;
+    const captureTimeUTC = item.capturedAtUTC;
+    const tweetTimeUTC = item.tweetTimeUTC || 'N/A';
+    const handle = item.accountHandle || 'unknown';
+    const displayName = item.accountName || handle;
+    const timeForFilename = item.tweetTimeUTC || captureTimeUTC;
+    const filename = `${handle.replace('@', '')}-${timeForFilename.replace(/[:.]/g, '-')}.png`;
 
     const lines = [
         '\u{1F4CC} TWEET SNAPSHOT', '',
-        `\u{1F464} Account: ${username}`,
+        `\u{1F464} Account: ${displayName} (${handle})`,
         `\u{1F550} Tweet Time: ${tweetTimeUTC}`,
         `\u{1F4F8} Captured: ${captureTimeUTC}`, ''
     ];

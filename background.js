@@ -1,4 +1,4 @@
-import { saveSnapshot } from './db.js';
+import { saveSnapshot, saveAlbum } from './db.js';
 
 // ─── Message Router ──────────────────────────────────────────────────────────
 
@@ -16,6 +16,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     if (request.action === "batch_capture") {
         handleBatchCapture(request.payload, sendResponse);
+        return true;
+    }
+    if (request.action === "batch_capture_page") {
+        handleBatchCapturePage(sendResponse);
         return true;
     }
     // Capture a single tweet by opening its status page in a background tab
@@ -417,6 +421,141 @@ async function handleBatchCapture(payload, sendResponse) {
         console.error('[Xnap] Batch capture failed:', error);
         if (captureWindowId) await chrome.windows.remove(captureWindowId).catch(() => {});
         if (keepAlive) clearInterval(keepAlive);
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+// ─── Batch Capture Page (Option B) ─────────────────────────────────────────
+// Captures all tweets on the user's current X.com tab. The user has already
+// filtered/searched on X, so we just scroll to collect URLs and capture.
+
+async function handleBatchCapturePage(sendResponse) {
+    let captureWindowId = null;
+    let captureTabId = null;
+    let keepAlive = null;
+
+    try {
+        // Get the active tab
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!activeTab) {
+            sendResponse({ success: false, error: 'No active tab found.' });
+            return;
+        }
+
+        const tabUrl = activeTab.url || '';
+        if (!/^https:\/\/(x|twitter)\.com\//.test(tabUrl)) {
+            sendResponse({ success: false, error: 'Active tab is not X.com.' });
+            return;
+        }
+
+        // Create album named after the page context
+        let albumName;
+        try {
+            const urlObj = new URL(tabUrl);
+            const searchQuery = urlObj.searchParams.get('q');
+            if (searchQuery) {
+                albumName = searchQuery;
+            } else {
+                // Profile or other page — use path
+                albumName = `Page: ${urlObj.pathname}`;
+            }
+        } catch {
+            albumName = `Batch ${new Date().toISOString().split('T')[0]}`;
+        }
+
+        const albumId = await saveAlbum({ name: albumName });
+
+        // Persist active batch album so the viewer can pick it up even if opened later
+        await chrome.storage.session.set({ activeBatchAlbumId: albumId });
+
+        // Notify viewer about the new album
+        chrome.runtime.sendMessage({ action: 'album_created', albumId, albumName }).catch(() => {});
+
+        console.log('[Xnap] Batch capture page:', tabUrl);
+
+        // Ask content script to scroll and collect tweet URLs (no account/date filters)
+        const collectResult = await chrome.tabs.sendMessage(activeTab.id, {
+            action: 'collect_tweet_urls',
+            payload: {}
+        });
+
+        if (!collectResult || !collectResult.success || !collectResult.urls?.length) {
+            const msg = collectResult?.urls?.length === 0
+                ? 'No tweets found on this page.'
+                : (collectResult?.error || 'Failed to collect tweet URLs.');
+            sendResponse({ success: false, error: msg });
+            return;
+        }
+
+        const urls = collectResult.urls;
+        console.log(`[Xnap] Collected ${urls.length} tweet URLs from page, starting capture...`);
+
+        // Keep the MV3 service worker alive
+        keepAlive = setInterval(() => {
+            chrome.runtime.getPlatformInfo(() => {});
+        }, 25000);
+
+        // Create ONE reusable popup window
+        const win = await chrome.windows.create({
+            url: urls[0],
+            type: 'popup',
+            focused: true,
+            width: 800,
+            height: 900,
+            top: 0,
+            left: 0
+        });
+        captureWindowId = win.id;
+        captureTabId = win.tabs[0].id;
+
+        let captured = 0;
+        let failed = 0;
+
+        const sendProgress = (phase, capturedCount, total) => {
+            chrome.runtime.sendMessage({
+                action: 'batch_progress',
+                payload: { phase, message: '', captured: capturedCount, total }
+            }).catch(() => {});
+        };
+
+        sendProgress('capturing', 0, urls.length);
+
+        for (let i = 0; i < urls.length; i++) {
+            try {
+                if (i > 0) {
+                    await chrome.tabs.update(captureTabId, { url: urls[i] });
+                }
+                const result = await waitAndCapture(captureTabId, captureWindowId, albumId);
+                if (result && result.success) {
+                    captured++;
+                } else {
+                    failed++;
+                    console.warn(`[Xnap] Batch page: failed ${urls[i]}:`, result?.error);
+                }
+            } catch (err) {
+                failed++;
+                console.warn(`[Xnap] Batch page: error ${urls[i]}:`, err.message);
+            }
+            sendProgress('capturing', captured, urls.length);
+        }
+
+        await chrome.windows.remove(captureWindowId).catch(() => {});
+        captureWindowId = null;
+
+        sendProgress('done', captured, urls.length);
+        // Clear active batch album
+        await chrome.storage.session.remove('activeBatchAlbumId');
+        // Notify viewer to do a full refresh (new album + snapshots)
+        chrome.runtime.sendMessage({ action: 'batch_complete' }).catch(() => {});
+        console.log(`[Xnap] Batch page complete: ${captured} captured, ${failed} failed`);
+        clearInterval(keepAlive);
+        sendResponse({ success: true, count: captured });
+
+    } catch (error) {
+        console.error('[Xnap] Batch page capture failed:', error);
+        if (captureWindowId) await chrome.windows.remove(captureWindowId).catch(() => {});
+        if (keepAlive) clearInterval(keepAlive);
+        await chrome.storage.session.remove('activeBatchAlbumId').catch(() => {});
         sendResponse({ success: false, error: error.message });
     }
 }

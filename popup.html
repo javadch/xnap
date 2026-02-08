@@ -121,12 +121,72 @@
         .setting-input input::placeholder {
             color: #71767b;
         }
+
+        /* Batch Capture */
+        .batch-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #38444d;
+        }
+        #snapPageBtn {
+            background-color: transparent;
+            border: 1px solid #38444d;
+            color: #e7e9ea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        #snapPageBtn:hover:not(:disabled) {
+            background-color: rgba(29, 155, 240, 0.1);
+            border-color: #1d9bf0;
+            color: #1d9bf0;
+        }
+        #snapPageBtn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #snapPageBtn svg { fill: currentColor; flex-shrink: 0; }
+        .batch-status {
+            font-size: 12px;
+            color: #71767b;
+            margin-top: 8px;
+            min-height: 16px;
+            text-align: center;
+        }
+        .batch-status.error { color: #f4212e; }
+        .batch-status.success { color: #00ba7c; }
+        .batch-progress-mini {
+            margin-top: 6px;
+            height: 3px;
+            background: #38444d;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+        .batch-progress-mini .fill {
+            width: 0%;
+            height: 100%;
+            background: #1d9bf0;
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
     <h3>Xnap</h3>
     <p>Your personal tweet knowledge base.</p>
     <button id="openAlbumBtn">Open</button>
+
+    <div class="batch-section">
+        <button id="snapPageBtn" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 10.8c-1.77 0-3.2 1.43-3.2 3.2s1.43 3.2 3.2 3.2 3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2zM18 4h-3.17L13 2H11L9.17 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-6 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            Snap this page
+        </button>
+        <div class="batch-progress-mini"><div class="fill"></div></div>
+        <div id="batchStatus" class="batch-status"></div>
+    </div>
     
     <div class="settings">
         <div class="settings-title">Settings</div>

@@ -1,7 +1,5 @@
 // viewer/state.js — Shared application state and filter logic
 
-import { extractUsername } from './utils.js';
-
 // ─── State ───────────────────────────────────────────────────────────────────
 
 export let allData = [];
@@ -21,7 +19,23 @@ export const activeFilters = {
 // ─── State Mutators ──────────────────────────────────────────────────────────
 
 export function setAllData(data) {
-    allData = data;
+    allData = data.map(normalizeItem);
+}
+
+/**
+ * Normalize a snapshot item — ensures new account fields exist.
+ * Migrates old records that only had a combined `user` field.
+ */
+function normalizeItem(item) {
+    if (!item.accountHandle && item.user) {
+        const match = item.user.match(/@([\w]+)/);
+        item.accountHandle = match ? match[0] : item.user;
+        item.accountName = item.user.split('\n')[0]?.trim() || item.accountHandle;
+    }
+    if (!item.accountHandle) item.accountHandle = '';
+    if (!item.accountName) item.accountName = item.accountHandle || 'Unknown';
+    if (item.accountId === undefined) item.accountId = null;
+    return item;
 }
 
 export function setAllAlbums(albums) {
@@ -86,15 +100,17 @@ export function getFilteredItems() {
         filtered = filtered.filter(item => {
             const text = (item.text || '').toLowerCase();
             const summary = (item.summary || '').toLowerCase();
-            const user = (item.user || '').toLowerCase();
+            const handle = (item.accountHandle || '').toLowerCase();
+            const name = (item.accountName || '').toLowerCase();
             const hashtagMatch = item.hashtags && item.hashtags.some(t => t.toLowerCase().includes(query));
             const keywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
             const url = (item.url || '').toLowerCase();
-            const tweetTime = (item.tweetTime || '').toLowerCase();
+            const tweetTime = (item.tweetTimeUTC || '').toLowerCase();
             const capturedAt = (item.capturedAtUTC || '').toLowerCase();
             const fingerprint = (item.fingerprint || '').toLowerCase();
 
-            return text.includes(query) || summary.includes(query) || user.includes(query) ||
+            return text.includes(query) || summary.includes(query) ||
+                   handle.includes(query) || name.includes(query) ||
                    hashtagMatch || keywordMatch || url.includes(query) ||
                    tweetTime.includes(query) || capturedAt.includes(query) || fingerprint.includes(query);
         });
@@ -102,15 +118,15 @@ export function getFilteredItems() {
 
     // Date range
     if (activeFilters.dateFrom) {
-        filtered = filtered.filter(item => new Date(item.timestamp) >= activeFilters.dateFrom);
+        filtered = filtered.filter(item => new Date(item.capturedAtUTC) >= activeFilters.dateFrom);
     }
     if (activeFilters.dateTo) {
-        filtered = filtered.filter(item => new Date(item.timestamp) <= activeFilters.dateTo);
+        filtered = filtered.filter(item => new Date(item.capturedAtUTC) <= activeFilters.dateTo);
     }
 
     // Account
     if (activeFilters.account) {
-        filtered = filtered.filter(item => extractUsername(item.user) === activeFilters.account);
+        filtered = filtered.filter(item => item.accountHandle === activeFilters.account);
     }
 
     // Hashtag
@@ -141,15 +157,17 @@ export function getFilteredItemsExcluding(excludeFacet) {
         filtered = filtered.filter(item => {
             const text = (item.text || '').toLowerCase();
             const summary = (item.summary || '').toLowerCase();
-            const user = (item.user || '').toLowerCase();
+            const handle = (item.accountHandle || '').toLowerCase();
+            const name = (item.accountName || '').toLowerCase();
             const hashtagMatch = item.hashtags && item.hashtags.some(t => t.toLowerCase().includes(query));
             const keywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
             const url = (item.url || '').toLowerCase();
-            const tweetTime = (item.tweetTime || '').toLowerCase();
+            const tweetTime = (item.tweetTimeUTC || '').toLowerCase();
             const capturedAt = (item.capturedAtUTC || '').toLowerCase();
             const fingerprint = (item.fingerprint || '').toLowerCase();
 
-            return text.includes(query) || summary.includes(query) || user.includes(query) ||
+            return text.includes(query) || summary.includes(query) ||
+                   handle.includes(query) || name.includes(query) ||
                    hashtagMatch || keywordMatch || url.includes(query) ||
                    tweetTime.includes(query) || capturedAt.includes(query) || fingerprint.includes(query);
         });
@@ -157,15 +175,15 @@ export function getFilteredItemsExcluding(excludeFacet) {
 
     // Date range
     if (activeFilters.dateFrom) {
-        filtered = filtered.filter(item => new Date(item.timestamp) >= activeFilters.dateFrom);
+        filtered = filtered.filter(item => new Date(item.capturedAtUTC) >= activeFilters.dateFrom);
     }
     if (activeFilters.dateTo) {
-        filtered = filtered.filter(item => new Date(item.timestamp) <= activeFilters.dateTo);
+        filtered = filtered.filter(item => new Date(item.capturedAtUTC) <= activeFilters.dateTo);
     }
 
     // Account (skip if excluded)
     if (excludeFacet !== 'account' && activeFilters.account) {
-        filtered = filtered.filter(item => extractUsername(item.user) === activeFilters.account);
+        filtered = filtered.filter(item => item.accountHandle === activeFilters.account);
     }
 
     // Hashtag (skip if excluded)

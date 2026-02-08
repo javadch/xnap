@@ -11,7 +11,6 @@ import { renderGrid, setApplyFilters as setGridApply } from './viewer/grid.js';
 import { initModal } from './viewer/modal.js';
 import { renderFacets, setApplyFilters as setFacetsApply } from './viewer/facets.js';
 import { renderAlbumList, handleDeleteAlbum, setApplyFilters as setAlbumsApply } from './viewer/albums.js';
-import { handleBatchCapture, setInitFn } from './viewer/batch.js';
 import { handleExport } from './viewer/export.js';
 import { initSidebar } from './viewer/sidebar.js';
 
@@ -22,7 +21,6 @@ const dateFrom = document.getElementById('dateFrom');
 const dateTo = document.getElementById('dateTo');
 const resetFiltersBtn = document.getElementById('resetFilters');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
-const snapAllBtn = document.getElementById('snapAllBtn');
 const exportBtn = document.getElementById('exportBtn');
 const deleteAlbumBtn = document.getElementById('deleteAlbumBtn');
 
@@ -43,7 +41,9 @@ function applyFilters() {
 setGridApply(applyFilters);
 setFacetsApply(applyFilters);
 setAlbumsApply(applyFilters);
-setInitFn(init);
+
+// Refresh grid when a snapshot is deleted from the modal
+document.addEventListener('snapshot-deleted', () => applyFilters());
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
 
@@ -54,9 +54,15 @@ async function init() {
     const settings = await chrome.storage.sync.get(['aiEnabled']);
     setAiEnabled(settings.aiEnabled !== false);
 
+    // Check if a batch capture is in progress and focus that album
+    const session = await chrome.storage.session.get('activeBatchAlbumId');
+    if (session.activeBatchAlbumId) {
+        activeFilters.albumIds = new Set([session.activeBatchAlbumId]);
+    }
+
     // Load data
     const snapshots = await getAllSnapshots();
-    snapshots.sort((a, b) => b.timestamp - a.timestamp);
+    snapshots.sort((a, b) => new Date(b.capturedAtUTC) - new Date(a.capturedAtUTC));
     setAllData(snapshots);
 
     const albums = await getAllAlbums();
@@ -65,7 +71,7 @@ async function init() {
 
     // Set date picker bounds
     if (allData.length > 0) {
-        const dates = allData.map(item => new Date(item.timestamp));
+        const dates = allData.map(item => new Date(item.capturedAtUTC));
         const minDate = new Date(Math.min(...dates));
         const maxDate = new Date(Math.max(...dates));
         dateFrom.min = minDate.toISOString().split('T')[0];
@@ -103,9 +109,6 @@ resetFiltersBtn.addEventListener('click', () => {
     dateTo.value = '';
     applyFilters();
 });
-
-// Batch capture
-snapAllBtn.addEventListener('click', handleBatchCapture);
 
 // Export
 exportBtn.addEventListener('click', handleExport);
@@ -150,6 +153,17 @@ chrome.runtime.onMessage.addListener((request) => {
         setAllData(data);
         applyFilters();
     }
+    if (request.action === "album_created") {
+        // Focus the new album so incoming snapshots are visible immediately
+        if (request.albumId) {
+            activeFilters.albumIds = new Set([request.albumId]);
+        }
+        init();
+    }
+    if (request.action === "batch_complete") {
+        // Full reload so new albums and snapshots appear
+        init();
+    }
 });
 
 // Auto-refresh on tab visibility
@@ -158,7 +172,7 @@ document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && Date.now() - lastVisibleTime > 1000) {
         const freshData = await getAllSnapshots();
         if (freshData.length !== allData.length) {
-            freshData.sort((a, b) => b.timestamp - a.timestamp);
+            freshData.sort((a, b) => new Date(b.capturedAtUTC) - new Date(a.capturedAtUTC));
             setAllData(freshData);
             applyFilters();
         }

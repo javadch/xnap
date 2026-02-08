@@ -45,7 +45,6 @@ export const saveSnapshot = async (data) => {
     
     // Add unique ID based on timestamp if not present
     data.id = data.id || `tweet-${Date.now()}`;
-    data.timestamp = Date.now();
     
     return new Promise((resolve, reject) => {
         const request = store.put(data);

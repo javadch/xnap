@@ -1,7 +1,6 @@
 // viewer/export.js — ZIP export
 
 import { getFilteredItems, allAlbums, activeFilters } from './state.js';
-import { extractUsername } from './utils.js';
 
 export async function handleExport() {
     const displayedItems = getFilteredItems();
@@ -51,18 +50,21 @@ export async function handleExport() {
         if (activeFilters.dateTo) manifest.filters.dateTo = activeFilters.dateTo.toISOString().split('T')[0];
 
         for (const item of displayedItems) {
-            const timeUTC = item.tweetTime || item.capturedAtUTC || new Date(item.timestamp).toISOString();
-            const username = extractUsername(item.user);
-            const filename = `${username.replace('@', '')}-${timeUTC.replace(/[:.]/g, '-')}.png`;
+            const timeUTC = item.tweetTimeUTC || item.capturedAtUTC;
+            const handle = (item.accountHandle || '').replace('@', '') || 'unknown';
+            const filename = `${handle}-${timeUTC.replace(/[:.]/g, '-')}.png`;
             const base64Data = item.image.split(',')[1];
             imagesFolder.file(filename, base64Data, { base64: true });
 
             metadata.push({
-                id: item.id, filename, url: item.url, user: item.user,
+                id: item.id, filename, url: item.url,
+                accountHandle: item.accountHandle,
+                accountName: item.accountName,
+                accountId: item.accountId || null,
                 text: item.text, summary: item.summary,
                 hashtags: item.hashtags, keywords: item.keywords,
-                tweetTime: item.tweetTime, capturedAtUTC: item.capturedAtUTC,
-                timestamp: item.timestamp, fingerprint: item.fingerprint,
+                tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
+                fingerprint: item.fingerprint,
                 albumId: item.albumId || null
             });
         }

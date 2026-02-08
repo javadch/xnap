@@ -11,10 +11,12 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 async function generateFingerprint(data) {
     const content = JSON.stringify({
         text: data.text,
-        user: data.user,
+        accountHandle: data.accountHandle,
+        accountName: data.accountName,
+        accountId: data.accountId,
         hashtags: data.hashtags,
         url: data.url,
-        tweetTime: data.tweetTime,
+        tweetTimeUTC: data.tweetTimeUTC,
         capturedAtUTC: data.capturedAtUTC
     });
     const encoder = new TextEncoder();
@@ -36,6 +38,37 @@ function isExtensionContextValid() {
 // Extract tweet data from an article element.
 // Carefully scoped to the MAIN tweet, ignoring any nested quoted-tweet card
 // (which has its own User-Name, tweetText, and status link).
+// Try to extract X's internal numeric user ID from React fiber internals.
+// This is best-effort; returns null if unavailable.
+function extractAccountId(tweetEl) {
+    try {
+        const el = tweetEl.querySelector('[data-testid="Tweet-User-Avatar"] a[href]')
+                || tweetEl.querySelector('[data-testid="User-Name"]')
+                || tweetEl;
+        const fiberKey = Object.keys(el).find(k =>
+            k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$')
+        );
+        if (!fiberKey) return null;
+
+        let fiber = el[fiberKey];
+        for (let i = 0; i < 50 && fiber; i++) {
+            const props = fiber.memoizedProps;
+            if (props) {
+                // GraphQL response shape: core.user_results.result.rest_id
+                const ur = props.user_results?.result
+                        || props.tweet?.core?.user_results?.result
+                        || props.result?.core?.user_results?.result;
+                if (ur?.rest_id) return ur.rest_id;
+                // Legacy props
+                if (props.user?.rest_id) return props.user.rest_id;
+                if (props.user?.id_str) return props.user.id_str;
+            }
+            fiber = fiber.return;
+        }
+    } catch (e) { /* silently fail */ }
+    return null;
+}
+
 function extractTweetData(tweetEl) {
     // Helper: find the first match that is NOT inside a quoted tweet card.
     // Quoted tweets are wrapped in [data-testid="card.wrapper"] on X.
@@ -55,7 +88,14 @@ function extractTweetData(tweetEl) {
     const textEl = queryMain('[data-testid="tweetText"]');
     const text = textEl?.innerText || "";
     const userEl = queryMain('[data-testid="User-Name"]');
-    const user = userEl?.innerText || "Unknown";
+    const userText = userEl?.innerText || "";
+
+    // Parse separate account fields from User-Name element
+    const handleMatch = userText.match(/@([\w]+)/);
+    const accountHandle = handleMatch ? '@' + handleMatch[1] : '';
+    const accountName = userText.split('\n')[0]?.trim() || accountHandle || 'Unknown';
+    const accountId = extractAccountId(tweetEl);
+
     const hashtags = text.match(/#[\p{L}\p{N}_]+/gu) || [];
 
     let timeEl = queryMain('a[href*="/status/"] time');
@@ -64,7 +104,7 @@ function extractTweetData(tweetEl) {
     const tweetUrl = timeLink ? 'https://x.com' + timeLink.getAttribute('href') : window.location.href;
     const tweetTime = timeEl?.getAttribute('datetime') || null;
 
-    return { text, user, hashtags, tweetUrl, tweetTime };
+    return { text, accountHandle, accountName, accountId, hashtags, tweetUrl, tweetTimeUTC: tweetTime };
 }
 
 // Expand "Show more" in a tweet (language-independent).
@@ -206,7 +246,7 @@ function isFocalTweet(tweetUrl) {
 async function captureFocalTweet(tweetEl, opts = {}) {
     await expandShowMore(tweetEl);
 
-    const { text, user, hashtags, tweetUrl, tweetTime } = extractTweetData(tweetEl);
+    const { text, accountHandle, accountName, accountId, hashtags, tweetUrl, tweetTimeUTC } = extractTweetData(tweetEl);
 
     // Small wait for any expand animation to settle
     await wait(400);
@@ -250,15 +290,16 @@ async function captureFocalTweet(tweetEl, opts = {}) {
     const capturedAtUTC = new Date().toISOString();
     const capturedAtLocalISO = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString();
     const fingerprint = await generateFingerprint({
-        text, user, hashtags, url: tweetUrl, tweetTime, capturedAtUTC
+        text, accountHandle, accountName, accountId,
+        hashtags, url: tweetUrl, tweetTimeUTC, capturedAtUTC
     });
 
     chrome.runtime.sendMessage({
         action: "process_tweet",
         payload: {
-            text, user, hashtags,
+            text, accountHandle, accountName, accountId, hashtags,
             image: imageDataUrl,
-            url: tweetUrl, tweetTime,
+            url: tweetUrl, tweetTimeUTC,
             capturedAtUTC,
             capturedAtLocal: capturedAtLocalISO,
             fingerprint,
@@ -333,6 +374,12 @@ async function handleClipClick(e) {
 // script then opens each URL in a popup window for reliable capture.
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'check_page_tweets') {
+        const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+        sendResponse({ count: tweets.length });
+        return;
+    }
+
     if (request.action === 'collect_tweet_urls') {
         const opts = request.payload || {};
         collectTweetUrls(opts)
@@ -446,20 +493,19 @@ async function collectTweetUrls({ expectedAccount, dateFrom, dateTo }) {
     const harvestCurrentTweets = () => {
         const tweets = document.querySelectorAll('article[data-testid="tweet"]');
         for (const tweet of tweets) {
-            const { tweetUrl, tweetTime, user } = extractTweetData(tweet);
+            const { tweetUrl, tweetTimeUTC, accountHandle } = extractTweetData(tweet);
             if (!tweetUrl || seen.has(tweetUrl)) continue;
             seen.add(tweetUrl);
 
             // Filter by account
             if (expectedAccount) {
-                const match = user.match(/@[\w]+/);
-                const username = match ? match[0].replace('@', '').toLowerCase() : '';
+                const username = accountHandle.replace('@', '').toLowerCase();
                 if (username !== expectedAccount.toLowerCase()) continue;
             }
 
             // Filter by date range
-            if (tweetTime) {
-                const tweetDate = new Date(tweetTime);
+            if (tweetTimeUTC) {
+                const tweetDate = new Date(tweetTimeUTC);
                 if (fromDate && tweetDate < fromDate) continue;
                 if (toDate && tweetDate > toDate) continue;
             }
