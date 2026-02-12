@@ -1,4 +1,5 @@
 import { saveSnapshot, saveAlbum } from './db.js';
+import { embedPngMetadata } from './xmp.js';
 
 // ─── Message Router ──────────────────────────────────────────────────────────
 
@@ -268,6 +269,11 @@ async function handleTweetProcessing(data) {
             keywords: data.keywords || [],
             savedAt: new Date().toISOString()
         };
+
+        // Embed XMP + PNG text metadata into the screenshot
+        if (record.image) {
+            record.image = embedPngMetadata(record.image, record);
+        }
 
         await saveSnapshot(record);
         console.log("Tweet saved:", record.url);

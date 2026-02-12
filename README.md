@@ -15,6 +15,7 @@ A Chrome extension for capturing, archiving, and organizing tweets (posts) from 
 - **JSON metadata copy** — Copy a snapshot's full metadata as JSON to the clipboard from the modal or grid card.
 - **AI enrichment** *(optional)* — Enable AI-powered summaries and keyword extraction via an API key (configured in the popup).
 - **Duplicate detection** — Each snapshot is fingerprinted (SHA-256) for authenticity and duplicate checks.
+- **Embedded provenance** — Every screenshot is stamped with XMP and PNG text metadata (author, tweet text, capture time, SHA-256 fingerprint, source URL). Metadata is visible in Windows Properties → Details, macOS Get Info, and any tool that reads XMP (Photoshop, GIMP, ExifTool).
 
 ## Installation
 
@@ -113,6 +114,45 @@ Each snapshot stores:
 | `albumId` | Album this snapshot belongs to (if any) |
 | `image` | Screenshot as a data URL |
 
+## Embedded Metadata (XMP + PNG tEXt)
+
+Every saved screenshot has provenance metadata baked into the PNG file itself, so it travels with the image when downloaded or exported.
+
+### Standard PNG tEXt chunks (visible in OS file properties)
+
+| Keyword | Content |
+|---------|---------|
+| Title | `@handle — tweet-date` |
+| Author | `Display Name (@handle)` |
+| Description | Tweet text (first 1 000 chars) |
+| Copyright | `Captured by Xnap \| SHA256: <fingerprint>` |
+| Creation Time | `capturedAtUTC` (ISO 8601) |
+| Source | Original tweet URL |
+| Software | `Xnap` |
+| Comment | Combined capture time + SHA-256 + URL |
+
+### XMP (Dublin Core + custom `xnap:` namespace)
+
+Readable by Photoshop, GIMP, ExifTool, XnView, and any XMP-aware tool.
+
+| XMP Property | Maps to |
+|-------------|---------|
+| `dc:title` | `@handle — tweet-date` |
+| `dc:creator` | `Display Name (@handle)` |
+| `dc:description` | Tweet text |
+| `dc:rights` | `Captured by Xnap \| SHA256: <fingerprint>` |
+| `dc:source` | Original tweet URL |
+| `dc:subject` | Hashtags (rdf:Bag) |
+| `xmp:CreateDate` | `capturedAtUTC` |
+| `xmp:CreatorTool` | `Xnap` |
+| `xnap:accountHandle` | @handle |
+| `xnap:accountName` | Display name |
+| `xnap:accountId` | X internal numeric user ID |
+| `xnap:tweetTimeUTC` | Original tweet timestamp |
+| `xnap:capturedAtUTC` | Capture timestamp |
+| `xnap:fingerprint` | SHA-256 hash |
+| `xnap:tweetUrl` | Permalink |
+
 ## Project Structure
 
 ```
@@ -121,6 +161,7 @@ xnap/
 ├── background.js        # Service worker: screenshot capture, batch orchestration
 ├── content.js           # Content script injected on X.com: clip buttons, tweet extraction
 ├── db.js                # IndexedDB wrapper (snapshots & albums)
+├── xmp.js               # PNG metadata embedding (XMP + tEXt chunks)
 ├── popup.html / .js     # Toolbar popup: viewer launch, batch capture trigger, settings
 ├── viewer.html / .js    # Gallery viewer entry point
 ├── styles.css           # Viewer styles
