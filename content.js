@@ -1,7 +1,11 @@
 // content.js — Xnap Content Script
 // Injected on X.com/Twitter.com pages
 
-console.log('Xnap v4.0 loaded!');
+if (window.__xnap_loaded) { /* already injected — skip */ }
+else {
+window.__xnap_loaded = true;
+
+console.log('[Xnap] Content script loaded');
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -551,3 +555,5 @@ async function collectTweetUrls({ expectedAccount, dateFrom, dateTo }) {
     sendProgress('loading', `Found ${urls.length} tweets to capture.`, 0, urls.length);
     return { success: true, urls };
 }
+
+} // end __xnap_loaded guard

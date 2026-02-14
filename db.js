@@ -94,7 +94,6 @@ export const saveAlbum = async (album) => {
     
     album.id = album.id || `album-${Date.now()}`;
     album.createdAt = album.createdAt || Date.now();
-    
     return new Promise((resolve, reject) => {
         const request = store.put(album);
         request.onsuccess = () => resolve(album.id);

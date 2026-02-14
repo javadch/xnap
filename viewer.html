@@ -51,6 +51,34 @@
                     <span class="facet-content">All Snapshots</span>
                 </div>
             </div>
+
+            <!-- ── Gear footer ──────────────────────────────────────────── -->
+            <div class="sidebar-footer">
+                <div class="gear-menu-anchor">
+                    <button id="gearBtn" class="gear-btn" title="Actions &amp; Settings">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.611 3.611 0 0112 15.6z"/></svg>
+                    </button>
+                    <div id="gearMenu" class="gear-menu hidden">
+                        <button class="gear-menu-item" data-action="snap">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 10.8c-1.77 0-3.2 1.43-3.2 3.2s1.43 3.2 3.2 3.2 3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2zM18 4h-3.17L13 2H11L9.17 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-6 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+                            Snap Page
+                        </button>
+                        <button class="gear-menu-item" data-action="backup">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                            Backup
+                        </button>
+                        <button class="gear-menu-item" data-action="restore">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                            Restore
+                        </button>
+                        <div class="gear-menu-divider"></div>
+                        <button class="gear-menu-item" data-action="settings">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.611 3.611 0 0112 15.6z"/></svg>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <main class="gallery">
@@ -72,8 +100,165 @@
                 </div>
             </header>
             <div id="grid" class="grid-container">
-                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- ── Action Dialogs ─────────────────────────────────────────────────── -->
+
+    <!-- Snap Page Dialog -->
+    <div id="snapDialog" class="action-dialog hidden">
+        <div class="action-dialog-content">
+            <div class="action-dialog-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 10.8c-1.77 0-3.2 1.43-3.2 3.2s1.43 3.2 3.2 3.2 3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2zM18 4h-3.17L13 2H11L9.17 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-6 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+                    Snap Page
+                </h2>
+                <button class="action-dialog-close">&times;</button>
+            </div>
+            <div class="action-dialog-body">
+                <p class="dialog-description">Capture all visible tweets from an open X.com tab. Each tweet will be screenshotted and saved with full metadata.</p>
+                <div id="snapTabList" class="snap-tab-list">
+                    <div class="dialog-loading">Scanning for X.com tabs…</div>
+                </div>
+                <div id="snapProgress" class="snap-progress hidden">
+                    <div class="snap-progress-bar"><div class="snap-progress-fill"></div></div>
+                    <div class="snap-progress-text">Preparing…</div>
+                </div>
+            </div>
+            <div class="action-dialog-footer">
+                <button id="snapCancelBtn" class="action-btn secondary hidden">Cancel</button>
+                <button id="snapStartBtn" class="action-btn primary" disabled>Snap Selected Tab</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Dialog -->
+    <div id="backupDialog" class="action-dialog hidden">
+        <div class="action-dialog-content">
+            <div class="action-dialog-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                    Backup Database
+                </h2>
+                <button class="action-dialog-close">&times;</button>
+            </div>
+            <div class="action-dialog-body">
+                <p class="dialog-description">Download a complete backup of your Xnap database as a ZIP file. Includes all screenshot images, metadata, and album structure.</p>
+                <div id="backupStats" class="dialog-stats">
+                    <div class="dialog-loading">Loading database info…</div>
+                </div>
+                <div class="dialog-info-box">
+                    <strong>What's included:</strong>
+                    <ul>
+                        <li>All screenshot images as PNG files</li>
+                        <li>Tweet metadata (text, author, timestamps, tags)</li>
+                        <li>Album structure and assignments</li>
+                        <li>Backup manifest with version info</li>
+                    </ul>
+                </div>
+                <div id="backupProgress" class="snap-progress hidden">
+                    <div class="snap-progress-bar"><div class="snap-progress-fill"></div></div>
+                    <div class="snap-progress-text">Creating backup…</div>
+                </div>
+            </div>
+            <div class="action-dialog-footer">
+                <button id="backupStartBtn" class="action-btn primary" disabled>Download Backup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Dialog -->
+    <div id="restoreDialog" class="action-dialog hidden">
+        <div class="action-dialog-content">
+            <div class="action-dialog-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                    Restore from Backup
+                </h2>
+                <button class="action-dialog-close">&times;</button>
+            </div>
+            <div class="action-dialog-body">
+                <p class="dialog-description">Restore snapshots and albums from a previously saved Xnap backup ZIP file.</p>
+                <div class="dialog-info-box">
+                    <strong>How it works:</strong>
+                    <ul>
+                        <li>Select a <code>.zip</code> file created by Xnap Backup</li>
+                        <li>New snapshots will be added to your database</li>
+                        <li>Existing snapshots are skipped by default</li>
+                        <li>Enable "Overwrite" to replace existing captures with backup versions</li>
+                    </ul>
+                </div>
+                <div class="restore-controls">
+                    <div class="restore-file-picker">
+                        <button id="restorePickBtn" class="action-btn secondary">Choose ZIP file…</button>
+                        <span id="restoreFileName" class="restore-file-name">No file selected</span>
+                        <input type="file" id="restoreFileInput" accept=".zip" style="display:none">
+                    </div>
+                    <label class="restore-overwrite">
+                        <input type="checkbox" id="restoreOverwrite">
+                        <span>Overwrite identical captures</span>
+                        <span class="setting-hint">Replace existing snapshots that match by ID</span>
+                    </label>
+                </div>
+                <div id="restoreProgress" class="snap-progress hidden">
+                    <div class="snap-progress-bar"><div class="snap-progress-fill"></div></div>
+                    <div class="snap-progress-text">Restoring…</div>
+                </div>
+                <div id="restoreResult" class="dialog-result hidden"></div>
+            </div>
+            <div class="action-dialog-footer">
+                <button id="restoreStartBtn" class="action-btn primary" disabled>Restore</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div id="settingsDialog" class="action-dialog hidden">
+        <div class="action-dialog-content">
+            <div class="action-dialog-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.611 3.611 0 0112 15.6z"/></svg>
+                    Settings
+                </h2>
+                <button class="action-dialog-close">&times;</button>
+            </div>
+            <div class="action-dialog-body">
+                <div class="settings-group">
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <div class="settings-label">Enable AI</div>
+                            <div class="setting-hint">Generate summaries and keywords for captured tweets using an AI model</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="settingsAiEnabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-row vertical">
+                        <div class="settings-label">AI API Key</div>
+                        <div class="setting-hint">Required when AI is enabled. Your key is stored locally and never shared.</div>
+                        <input type="password" id="settingsAiApiKey" class="settings-input" placeholder="Enter API key…">
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <div class="settings-label">Max tweets per page</div>
+                            <div class="setting-hint">Limit the number of tweets captured per Snap Page action. Set to 0 for unlimited.</div>
+                        </div>
+                        <input type="number" id="settingsMaxTweets" class="settings-input" style="width:80px;text-align:center" min="0" step="1" value="0">
+                    </div>
+                    <div class="settings-row vertical">
+                        <div class="settings-label">Copyright Text</div>
+                        <div class="setting-hint">Custom copyright line embedded in every screenshot's metadata. If empty, defaults to provenance fingerprint.</div>
+                        <textarea id="settingsCopyright" class="settings-input" rows="2" placeholder="e.g. © 2026 Your Name. All rights reserved."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="action-dialog-footer">
+                <span id="settingsSaved" class="settings-saved-msg hidden">Settings saved</span>
+                <button id="settingsSaveBtn" class="action-btn primary">Save</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal" class="modal hidden">

@@ -13,6 +13,7 @@ import { renderFacets, setApplyFilters as setFacetsApply } from './viewer/facets
 import { renderAlbumList, handleDeleteAlbum, setApplyFilters as setAlbumsApply } from './viewer/albums.js';
 import { handleExport } from './viewer/export.js';
 import { initSidebar } from './viewer/sidebar.js';
+import { initToolbar } from './viewer/toolbar.js';
 
 // ─── DOM References ──────────────────────────────────────────────────────────
 
@@ -134,6 +135,10 @@ deleteAllBtn.addEventListener('click', async () => {
             }
             const deletedIds = new Set(displayedItems.map(i => i.id));
             setAllData(allData.filter(i => !deletedIds.has(i.id)));
+            // Clear facet filters so the remaining album content is fully visible
+            activeFilters.account = null;
+            activeFilters.hashtag = null;
+            activeFilters.keyword = null;
             applyFilters();
             alert(`${count} snapshot${count !== 1 ? 's' : ''} deleted.`);
         } catch (err) {
@@ -192,3 +197,4 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 initModal();
 initSidebar();
+initToolbar();

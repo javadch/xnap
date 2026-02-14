@@ -13,8 +13,7 @@
         "<all_urls>"
     ],
     "action": {
-        "default_title": "Open Archive",
-        "default_popup": "popup.html"
+        "default_title": "Open Xnap"
     },
     "background": {
         "service_worker": "background.js",
