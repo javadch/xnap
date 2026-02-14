@@ -149,7 +149,7 @@ function buildXmpXml(m) {
  * @param {object} record   — snapshot record (accountHandle, text, url, …)
  * @returns {string} New data URL with metadata embedded
  */
-export function embedPngMetadata(dataUrl, record) {
+export function embedPngMetadata(dataUrl, record, opts = {}) {
     if (!dataUrl || !dataUrl.startsWith('data:image/png')) return dataUrl;
 
     // Decode base64 → binary
@@ -170,7 +170,7 @@ export function embedPngMetadata(dataUrl, record) {
     const description = record.text || '';
     const capturedAt  = record.capturedAtUTC || '';
     const sha         = record.fingerprint || 'N/A';
-    const rights      = `Captured by Xnap | SHA256: ${sha}`;
+    const rights      = opts.copyrightText || `Captured by Xnap | SHA256: ${sha}`;
     const tweetUrl    = record.url || '';
 
     const meta = {

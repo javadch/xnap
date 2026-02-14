@@ -1,5 +1,6 @@
-import { saveSnapshot, saveAlbum } from './db.js';
+import { saveSnapshot, saveAlbum, getAllSnapshots, getAllAlbums } from './db.js';
 import { embedPngMetadata } from './xmp.js';
+import JSZip from './lib/jszip.esm.js';
 
 // ─── Message Router ──────────────────────────────────────────────────────────
 
@@ -31,6 +32,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Relay batch progress from content script to viewer
     if (request.action === "batch_progress") {
         chrome.runtime.sendMessage(request).catch(() => {});
+    }
+    if (request.action === "backup_database") {
+        handleBackup(sendResponse);
+        return true;
+    }
+    if (request.action === "restore_database") {
+        handleRestore(request.dataUrl, request.overwrite, sendResponse);
+        return true;
     }
     return true;
 });
@@ -272,7 +281,8 @@ async function handleTweetProcessing(data) {
 
         // Embed XMP + PNG text metadata into the screenshot
         if (record.image) {
-            record.image = embedPngMetadata(record.image, record);
+            const { copyrightText } = await chrome.storage.sync.get('copyrightText');
+            record.image = embedPngMetadata(record.image, record, { copyrightText });
         }
 
         await saveSnapshot(record);
@@ -562,6 +572,125 @@ async function handleBatchCapturePage(sendResponse) {
         if (captureWindowId) await chrome.windows.remove(captureWindowId).catch(() => {});
         if (keepAlive) clearInterval(keepAlive);
         await chrome.storage.session.remove('activeBatchAlbumId').catch(() => {});
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+// ─── Backup & Restore ────────────────────────────────────────────────────────
+
+async function handleBackup(sendResponse) {
+    try {
+        const [snapshots, albums] = await Promise.all([getAllSnapshots(), getAllAlbums()]);
+        const version = chrome.runtime.getManifest().version;
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `Xnap-${version}-${ts}.zip`;
+
+        const zip = new JSZip();
+        const imgFolder = zip.folder('images');
+
+        // Strip image data from JSON, store as separate PNGs
+        // Filename matches export convention: handle-tweetTimeUTC.png
+        const metadata = snapshots.map(snap => {
+            const { image, ...rest } = snap;
+            const timeUTC = snap.tweetTimeUTC || snap.capturedAtUTC;
+            const handle = (snap.accountHandle || '').replace('@', '') || 'unknown';
+            const imgFilename = `${handle}-${timeUTC.replace(/[:.]/g, '-')}.png`;
+            if (image) {
+                const base64 = image.split(',')[1];
+                if (base64) {
+                    imgFolder.file(imgFilename, base64, { base64: true });
+                }
+            }
+            return { ...rest, filename: imgFilename };
+        });
+
+        zip.file('snapshots.json', JSON.stringify(metadata, null, 2));
+        zip.file('albums.json', JSON.stringify(albums, null, 2));
+        zip.file('backup-info.json', JSON.stringify({
+            xnapVersion: version,
+            exportedAt: new Date().toISOString(),
+            snapshotCount: snapshots.length,
+            albumCount: albums.length
+        }, null, 2));
+
+        const blob = await zip.generateAsync({
+            type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 }
+        });
+        const reader = new FileReader();
+        reader.onload = () => {
+            sendResponse({
+                success: true,
+                dataUrl: reader.result,
+                filename,
+                snapshotCount: snapshots.length,
+                albumCount: albums.length
+            });
+        };
+        reader.onerror = () => sendResponse({ success: false, error: 'Failed to encode zip.' });
+        reader.readAsDataURL(blob);
+    } catch (error) {
+        console.error('[Xnap] Backup failed:', error);
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+async function handleRestore(dataUrl, overwrite, sendResponse) {
+    try {
+        const base64 = dataUrl.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+        const zip = await JSZip.loadAsync(bytes.buffer);
+
+        const snapshotsFile = zip.file('snapshots.json');
+        const albumsFile = zip.file('albums.json');
+        if (!snapshotsFile) throw new Error('Invalid backup: missing snapshots.json');
+
+        const snapshots = JSON.parse(await snapshotsFile.async('string'));
+        const albums = albumsFile ? JSON.parse(await albumsFile.async('string')) : [];
+
+        // Reassemble image data URLs from images/ folder
+        for (const snap of snapshots) {
+            if (!snap.image) {
+                const imgFile = snap.filename
+                    ? zip.file(`images/${snap.filename}`)
+                    : zip.file(`images/${snap.id}.png`);   // fallback for older backups
+                if (imgFile) {
+                    const imgBase64 = await imgFile.async('base64');
+                    snap.image = `data:image/png;base64,${imgBase64}`;
+                }
+            }
+            delete snap.filename;  // don't persist the transient filename field
+        }
+
+        const existing = await getAllSnapshots();
+        const existingIds = new Set(existing.map(s => s.id));
+
+        let added = 0, skipped = 0, overwritten = 0;
+
+        for (const album of albums) {
+            try { await saveAlbum(album); } catch (e) { /* ignore dupes */ }
+        }
+
+        for (const snap of snapshots) {
+            if (existingIds.has(snap.id)) {
+                if (overwrite) {
+                    await saveSnapshot(snap);
+                    overwritten++;
+                } else {
+                    skipped++;
+                }
+            } else {
+                await saveSnapshot(snap);
+                added++;
+            }
+        }
+
+        chrome.runtime.sendMessage({ action: 'batch_complete' }).catch(() => {});
+        sendResponse({ success: true, added, skipped, overwritten });
+    } catch (error) {
+        console.error('[Xnap] Restore failed:', error);
         sendResponse({ success: false, error: error.message });
     }
 }
