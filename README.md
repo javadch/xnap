@@ -12,7 +12,9 @@ A Chrome extension for capturing, archiving, and organizing tweets (posts) from 
 - **Search & filter** — Filter snapshots by text, account, hashtag, keyword, date range, or album. Facets are cross-filtered — selecting one facet updates the options shown in the others.
 - **Albums** — Organize snapshots into albums. Batch captures automatically create an album (lazily — only when the first tweet is actually captured).
 - **Backup & restore** — Full database backup as a `.zip` file (images stored as separate PNGs with DEFLATE compression). Restore from backup with optional overwrite of existing snapshots.
-- **ZIP export** — Export filtered snapshots as a `.zip` file containing PNG images, a metadata JSON, and a manifest.
+- **ZIP export** — Export filtered snapshots as a `.zip` file containing PNG images, metadata JSON, album records, and a manifest.
+- **Import** — Import snapshots from any Xnap export or backup ZIP. Albums are recreated automatically.
+- **Notes** — Add an optional note to any snapshot from the modal view. Notes auto-save on blur.
 - **Share** — Share any snapshot via Telegram (Web Share API with clipboard + file fallback).
 - **JSON metadata copy** — Copy a snapshot's full metadata as JSON to the clipboard from the modal or grid card.
 - **AI enrichment** *(optional)* — Enable AI-powered summaries and keyword extraction via an API key (configured in Settings).
@@ -69,7 +71,7 @@ Click the **Xnap** toolbar icon to open the gallery viewer in a new tab. All act
 
 ### Viewing a snapshot
 
-Click any snapshot card in the grid to open a full-size modal showing the screenshot and all associated metadata (display name, @handle, text, hashtags, keywords, timestamps, URL, SHA-256 fingerprint).
+Click any snapshot card in the grid to open a full-size modal showing the screenshot and all associated metadata (display name, @handle, text, hashtags, keywords, timestamps, URL, SHA-256 fingerprint). You can also add or edit an optional **note** — it auto-saves when you click away.
 
 **Action buttons** (available on both the modal and grid cards):
 
@@ -84,21 +86,30 @@ Click any snapshot card in the grid to open a full-size modal showing the screen
 ### Exporting
 
 1. Apply any filters to select the snapshots you want to export.
-2. Click the **Export** button in the header.
+2. Click the **Export** button in the gallery header.
 3. A `.zip` file is downloaded containing:
    - `images/` — PNG screenshots named by `handle-tweettime.png`
-   - `metadata.json` — Full metadata for each snapshot
+   - `metadata.json` — Full metadata for each snapshot (including notes)
+   - `albums.json` — Album records referenced by the exported snapshots
    - `manifest.json` — Export info including applied filters and album context
+
+### Importing
+
+1. Click the **Import** button in the gallery header (next to Export).
+2. Select a `.zip` file created by Xnap Export or Backup.
+3. Optionally enable **Overwrite existing** to replace duplicates.
+4. Click **Import**. Albums are recreated and snapshots are added to the database.
+5. The gallery resets all filters so imported content is immediately visible.
 
 ### Backup & Restore
 
-**Backup** — From the gear menu, choose **Backup**. The dialog shows database stats (snapshot count, albums, accounts, date range). Click **Download Backup** to save a `.zip` file containing:
+**Backup** — From the gear menu, choose **Backup**. The dialog shows database stats (snapshot count with individual/album breakdown, albums, accounts, date range). Click **Download Backup** to save a `Xnap-backup-<version>-<timestamp>.zip` file containing:
 - `images/` — PNG screenshots (DEFLATE compressed)
 - `snapshots.json` — Full metadata (without inline image data)
 - `albums.json` — Album definitions
 - `backup-info.json` — Version and export timestamp
 
-**Restore** — From the gear menu, choose **Restore**. Select a backup `.zip` file and optionally enable **Overwrite existing** to replace duplicates. The dialog shows results (added, skipped, overwritten).
+**Restore** — From the gear menu, choose **Restore**. Select a backup or export `.zip` file and optionally enable **Overwrite existing** to replace duplicates. Albums are recreated automatically. The dialog shows results (albums restored, added, skipped, overwritten).
 
 ### Settings
 
@@ -134,6 +145,7 @@ Each snapshot stores:
 | `summary` | AI-generated summary (if enabled) |
 | `keywords` | AI-generated keywords (if enabled) |
 | `albumId` | Album this snapshot belongs to (if any) |
+| `note` | Optional user note (free text) |
 | `image` | Screenshot as a data URL |
 
 ## Embedded Metadata (XMP + PNG tEXt)

@@ -24,6 +24,18 @@ const resetFiltersBtn = document.getElementById('resetFilters');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
 const exportBtn = document.getElementById('exportBtn');
 const deleteAlbumBtn = document.getElementById('deleteAlbumBtn');
+const importBtn = document.getElementById('importBtn');
+
+// Import dialog elements
+const importPickBtn = document.getElementById('importPickBtn');
+const importFileName = document.getElementById('importFileName');
+const importFileInput = document.getElementById('importFileInput');
+const importOverwrite = document.getElementById('importOverwrite');
+const importStartBtn = document.getElementById('importStartBtn');
+const importProgress = document.getElementById('importProgress');
+const importProgressFill = importProgress.querySelector('.snap-progress-fill');
+const importProgressText = importProgress.querySelector('.snap-progress-text');
+const importResult = document.getElementById('importResult');
 
 // ─── Central applyFilters ────────────────────────────────────────────────────
 
@@ -56,8 +68,9 @@ async function init() {
     setAiEnabled(settings.aiEnabled !== false);
 
     // Check if a batch capture is in progress and focus that album
+    // Only override album filter if it's still at the default
     const session = await chrome.storage.session.get('activeBatchAlbumId');
-    if (session.activeBatchAlbumId) {
+    if (session.activeBatchAlbumId && activeFilters.albumIds.has('individual') && activeFilters.albumIds.size === 1) {
         activeFilters.albumIds = new Set([session.activeBatchAlbumId]);
     }
 
@@ -114,6 +127,86 @@ resetFiltersBtn.addEventListener('click', () => {
 // Export
 exportBtn.addEventListener('click', handleExport);
 
+// Import
+importBtn.addEventListener('click', () => {
+    document.getElementById('importDialog').classList.remove('hidden');
+    importStartBtn.disabled = true;
+    importFileInput.value = '';
+    importFileName.textContent = 'No file selected';
+    importProgress.classList.add('hidden');
+    importResult.classList.add('hidden');
+});
+
+importPickBtn.addEventListener('click', () => importFileInput.click());
+
+importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files[0];
+    if (file) {
+        importFileName.textContent = file.name;
+        importStartBtn.disabled = false;
+    } else {
+        importFileName.textContent = 'No file selected';
+        importStartBtn.disabled = true;
+    }
+});
+
+importStartBtn.addEventListener('click', () => {
+    const file = importFileInput.files[0];
+    if (!file) return;
+
+    importStartBtn.disabled = true;
+    importStartBtn.textContent = 'Importing…';
+    importProgress.classList.remove('hidden');
+    importResult.classList.add('hidden');
+    importProgressFill.style.width = '20%';
+    importProgressText.textContent = 'Reading ZIP file…';
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        importProgressFill.style.width = '50%';
+        importProgressText.textContent = 'Importing snapshots…';
+
+        chrome.runtime.sendMessage({
+            action: 'restore_database',
+            dataUrl: reader.result,
+            overwrite: importOverwrite.checked
+        }, (response) => {
+            importProgress.classList.add('hidden');
+            importResult.classList.remove('hidden');
+
+            if (response && response.success) {
+                const albumLine = response.albumsRestored
+                    ? `<li>${response.albumsRestored} album${response.albumsRestored !== 1 ? 's' : ''} restored</li>` : '';
+                importResult.className = 'dialog-result success';
+                importResult.innerHTML = `
+                    <strong>Import complete</strong>
+                    <ul>
+                        ${albumLine}
+                        <li>${response.added} snapshot${response.added !== 1 ? 's' : ''} added</li>
+                        <li>${response.skipped} skipped (already exist)</li>
+                        <li>${response.overwritten} overwritten</li>
+                    </ul>
+                `;
+                // Data reload + filter reset handled by restore_complete listener
+            } else {
+                importResult.className = 'dialog-result error';
+                importResult.textContent = response?.error || 'Import failed.';
+            }
+            importStartBtn.textContent = 'Import';
+            importStartBtn.disabled = false;
+        });
+    };
+    reader.onerror = () => {
+        importProgress.classList.add('hidden');
+        importResult.classList.remove('hidden');
+        importResult.className = 'dialog-result error';
+        importResult.textContent = 'Failed to read file.';
+        importStartBtn.textContent = 'Import';
+        importStartBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+});
+
 // Delete album
 deleteAlbumBtn.addEventListener('click', handleDeleteAlbum);
 
@@ -167,6 +260,14 @@ chrome.runtime.onMessage.addListener((request) => {
     }
     if (request.action === "batch_complete") {
         // Full reload so new albums and snapshots appear
+        init();
+    }
+    if (request.action === "restore_complete") {
+        // Reset album filter so restored/imported snapshots are visible
+        resetFilters();
+        searchInput.value = '';
+        dateFrom.value = '';
+        dateTo.value = '';
         init();
     }
 });

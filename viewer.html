@@ -88,6 +88,10 @@
                     <span id="snapshotCount" class="snapshot-count"></span>
                 </div>
                 <div class="header-actions">
+                    <button id="importBtn" title="Import snapshots from a ZIP file">
+                        <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                        Import
+                    </button>
                     <button id="exportBtn" title="Export visible snapshots as ZIP">
                         <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
                         Export
@@ -144,7 +148,7 @@
                 <button class="action-dialog-close">&times;</button>
             </div>
             <div class="action-dialog-body">
-                <p class="dialog-description">Download a complete backup of your Xnap database as a ZIP file. Includes all screenshot images, metadata, and album structure.</p>
+                <p class="dialog-description">Download a complete backup of your entire Xnap database as a ZIP file. Includes all screenshot images, metadata, and album structure across all albums.</p>
                 <div id="backupStats" class="dialog-stats">
                     <div class="dialog-loading">Loading database info…</div>
                 </div>
@@ -209,6 +213,51 @@
             </div>
             <div class="action-dialog-footer">
                 <button id="restoreStartBtn" class="action-btn primary" disabled>Restore</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Dialog -->
+    <div id="importDialog" class="action-dialog hidden">
+        <div class="action-dialog-content">
+            <div class="action-dialog-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                    Import Snapshots
+                </h2>
+                <button class="action-dialog-close">&times;</button>
+            </div>
+            <div class="action-dialog-body">
+                <p class="dialog-description">Import snapshots from an Xnap export or backup ZIP file.</p>
+                <div class="dialog-info-box">
+                    <strong>How it works:</strong>
+                    <ul>
+                        <li>Select a <code>.zip</code> file created by Xnap Export or Backup</li>
+                        <li>New snapshots will be added to your database</li>
+                        <li>Existing snapshots are skipped by default</li>
+                        <li>Enable "Overwrite" to replace existing captures</li>
+                    </ul>
+                </div>
+                <div class="restore-controls">
+                    <div class="restore-file-picker">
+                        <button id="importPickBtn" class="action-btn secondary">Choose ZIP file…</button>
+                        <span id="importFileName" class="restore-file-name">No file selected</span>
+                        <input type="file" id="importFileInput" accept=".zip" style="display:none">
+                    </div>
+                    <label class="restore-overwrite">
+                        <input type="checkbox" id="importOverwrite">
+                        <span>Overwrite identical captures</span>
+                        <span class="setting-hint">Replace existing snapshots that match by ID</span>
+                    </label>
+                </div>
+                <div id="importProgress" class="snap-progress hidden">
+                    <div class="snap-progress-bar"><div class="snap-progress-fill"></div></div>
+                    <div class="snap-progress-text">Importing…</div>
+                </div>
+                <div id="importResult" class="dialog-result hidden"></div>
+            </div>
+            <div class="action-dialog-footer">
+                <button id="importStartBtn" class="action-btn primary" disabled>Import</button>
             </div>
         </div>
     </div>

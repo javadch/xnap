@@ -60,6 +60,11 @@ export function removeDataItem(id) {
     allData = allData.filter(i => i.id !== id);
 }
 
+export function updateDataItem(item) {
+    const idx = allData.findIndex(i => i.id === item.id);
+    if (idx !== -1) allData[idx] = item;
+}
+
 export function removeAlbumData(albumId) {
     allData = allData.filter(i => i.albumId !== albumId);
     allAlbums = allAlbums.filter(a => a.id !== albumId);
@@ -68,17 +73,28 @@ export function removeAlbumData(albumId) {
 // ─── Filtering ───────────────────────────────────────────────────────────────
 
 /**
+ * A snapshot is "effectively individual" if it has no albumId or its album
+ * no longer exists (orphaned after album deletion).
+ */
+function isEffectivelyIndividual(item) {
+    if (!item.albumId) return true;
+    return !allAlbums.some(a => a.id === item.albumId);
+}
+
+function matchesAlbumFilter(item, ids) {
+    if (ids.has('individual') && isEffectivelyIndividual(item)) return true;
+    if (item.albumId && ids.has(item.albumId)) return true;
+    return false;
+}
+
+/**
  * Return items scoped to the currently selected album (before any other filters).
  * Used by facets so they reflect only the album's content.
  */
 export function getAlbumScopedItems() {
     const ids = activeFilters.albumIds;
     if (ids.size === 0) return allData;
-    return allData.filter(item => {
-        if (ids.has('individual') && !item.albumId) return true;
-        if (item.albumId && ids.has(item.albumId)) return true;
-        return false;
-    });
+    return allData.filter(item => matchesAlbumFilter(item, ids));
 }
 
 export function getFilteredItems() {
@@ -87,11 +103,7 @@ export function getFilteredItems() {
     // Album filter
     const ids = activeFilters.albumIds;
     if (ids.size > 0) {
-        filtered = filtered.filter(item => {
-            if (ids.has('individual') && !item.albumId) return true;
-            if (item.albumId && ids.has(item.albumId)) return true;
-            return false;
-        });
+        filtered = filtered.filter(item => matchesAlbumFilter(item, ids));
     }
 
     // Text search

@@ -56,7 +56,7 @@ export async function handleExport() {
             const base64Data = item.image.split(',')[1];
             imagesFolder.file(filename, base64Data, { base64: true });
 
-            metadata.push({
+            const entry = {
                 id: item.id, filename, url: item.url,
                 accountHandle: item.accountHandle,
                 accountName: item.accountName,
@@ -66,7 +66,16 @@ export async function handleExport() {
                 tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
                 fingerprint: item.fingerprint,
                 albumId: item.albumId || null
-            });
+            };
+            if (item.note) entry.note = item.note;
+            metadata.push(entry);
+        }
+
+        // Include album records referenced by exported snapshots
+        const albumIds = new Set(displayedItems.map(i => i.albumId).filter(Boolean));
+        const albums = allAlbums.filter(a => albumIds.has(a.id));
+        if (albums.length > 0) {
+            zip.file('albums.json', JSON.stringify(albums, null, 2));
         }
 
         zip.file('manifest.json', JSON.stringify(manifest, null, 2));

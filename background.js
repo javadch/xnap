@@ -623,7 +623,7 @@ async function handleBackup(sendResponse) {
         const [snapshots, albums] = await Promise.all([getAllSnapshots(), getAllAlbums()]);
         const version = chrome.runtime.getManifest().version;
         const ts = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `Xnap-${version}-${ts}.zip`;
+        const filename = `Xnap-backup-${version}-${ts}.zip`;
 
         const zip = new JSZip();
         const imgFolder = zip.folder('images');
@@ -683,9 +683,9 @@ async function handleRestore(dataUrl, overwrite, sendResponse) {
 
         const zip = await JSZip.loadAsync(bytes.buffer);
 
-        const snapshotsFile = zip.file('snapshots.json');
+        const snapshotsFile = zip.file('snapshots.json') || zip.file('metadata.json');
         const albumsFile = zip.file('albums.json');
-        if (!snapshotsFile) throw new Error('Invalid backup: missing snapshots.json');
+        if (!snapshotsFile) throw new Error('Invalid archive: missing snapshots.json or metadata.json');
 
         const snapshots = JSON.parse(await snapshotsFile.async('string'));
         const albums = albumsFile ? JSON.parse(await albumsFile.async('string')) : [];
@@ -727,8 +727,8 @@ async function handleRestore(dataUrl, overwrite, sendResponse) {
             }
         }
 
-        chrome.runtime.sendMessage({ action: 'batch_complete' }).catch(() => {});
-        sendResponse({ success: true, added, skipped, overwritten });
+        chrome.runtime.sendMessage({ action: 'restore_complete' }).catch(() => {});
+        sendResponse({ success: true, added, skipped, overwritten, albumsRestored: albums.length });
     } catch (error) {
         console.error('[Xnap] Restore failed:', error);
         sendResponse({ success: false, error: error.message });

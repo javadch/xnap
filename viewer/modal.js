@@ -1,9 +1,9 @@
 // viewer/modal.js — Modal detail view
 
-import { aiEnabled, removeDataItem } from './state.js';
+import { aiEnabled, removeDataItem, updateDataItem } from './state.js';
 import { generateFilename } from './utils.js';
 import { shareViaTelegram } from './share.js';
-import { deleteSnapshot } from '../db.js';
+import { deleteSnapshot, saveSnapshot } from '../db.js';
 
 const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modalBody');
@@ -90,6 +90,12 @@ export function openModal(item) {
             </div>
             ${aiSummarySection}
             ${aiKeywordsSection}
+            <div class="modal-section modal-note-section">
+                <div class="section-icon" title="Note">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </div>
+                <textarea class="note-input" placeholder="Add a note…" rows="2">${item.note ? item.note.replace(/</g, '&lt;') : ''}</textarea>
+            </div>
         </div>
         <div class="modal-footer">
             <div class="modal-footer-row">
@@ -101,6 +107,17 @@ export function openModal(item) {
             </div>
         </div>
     `;
+
+    // Note auto-save on blur
+    const noteInput = modalBody.querySelector('.note-input');
+    noteInput.addEventListener('blur', async () => {
+        const newNote = noteInput.value.trim();
+        if (newNote !== (item.note || '')) {
+            item.note = newNote || undefined;
+            await saveSnapshot(item);
+            updateDataItem(item);
+        }
+    });
 
     // Convert data URL to File-backed blob URL so "Save As" shows the real filename
     const modalImg = modalBody.querySelector('.modal-image-container img');
@@ -126,7 +143,8 @@ export function openModal(item) {
             hashtags: item.hashtags, keywords: item.keywords,
             tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
             fingerprint: item.fingerprint,
-            albumId: item.albumId || null
+            albumId: item.albumId || null,
+            note: item.note || undefined
         };
         try {
             await navigator.clipboard.writeText(JSON.stringify(record, null, 2));

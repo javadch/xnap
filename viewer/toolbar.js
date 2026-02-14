@@ -191,8 +191,11 @@ async function openBackupDialog() {
             return;
         }
 
-        // Calculate stats
-        const accounts = new Set(snapshots.map(s => s.accountHandle).filter(Boolean));
+        // Calculate stats from full database
+        const accounts = new Set(snapshots.map(s => (s.accountHandle || '').toLowerCase()).filter(Boolean));
+        const albumIdSet = new Set(albums.map(a => a.id));
+        const inAlbum = snapshots.filter(s => s.albumId && albumIdSet.has(s.albumId)).length;
+        const individual = snapshots.length - inAlbum;
         const dates = snapshots.map(s => new Date(s.capturedAtUTC || s.tweetTimeUTC));
         const earliest = new Date(Math.min(...dates)).toLocaleDateString();
         const latest = new Date(Math.max(...dates)).toLocaleDateString();
@@ -202,6 +205,7 @@ async function openBackupDialog() {
                 <div class="stat-item">
                     <div class="stat-value">${snapshots.length}</div>
                     <div class="stat-label">Snapshots</div>
+                    <div class="stat-hint">${individual} individual · ${inAlbum} in albums</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value">${albums.length}</div>
@@ -309,10 +313,13 @@ restoreStartBtn.addEventListener('click', () => {
             restoreResult.classList.remove('hidden');
 
             if (response && response.success) {
+                const albumLine = response.albumsRestored
+                    ? `<li>${response.albumsRestored} album${response.albumsRestored !== 1 ? 's' : ''} restored</li>` : '';
                 restoreResult.className = 'dialog-result success';
                 restoreResult.innerHTML = `
                     <strong>Restore complete</strong>
                     <ul>
+                        ${albumLine}
                         <li>${response.added} snapshot${response.added !== 1 ? 's' : ''} added</li>
                         <li>${response.skipped} skipped (already exist)</li>
                         <li>${response.overwritten} overwritten</li>
