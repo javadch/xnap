@@ -18,7 +18,6 @@ export async function shareViaTelegram(item) {
     if (item.text) { lines.push('\u{1F4DD} Tweet Text:', item.text, ''); }
     if (item.hashtags && item.hashtags.length > 0) { lines.push('\u{1F3F7}\uFE0F Hashtags:', item.hashtags.join(' '), ''); }
     if (item.summary) { lines.push('\u{1F916} AI Summary:', item.summary, ''); }
-    if (item.keywords && item.keywords.length > 0) { lines.push('\u{1F511} Keywords:', item.keywords.join(', '), ''); }
     if (item.url) { lines.push('\u{1F517} Original:', item.url); }
 
     const shareText = lines.join('\n');

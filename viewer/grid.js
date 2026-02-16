@@ -31,8 +31,6 @@ export function renderGrid(items) {
 
         const summaryHtml = aiEnabled && item.summary
             ? `<p class="summary">${item.summary}</p>` : '';
-        const keywordsHtml = aiEnabled && item.keywords && item.keywords.length > 0
-            ? `<div class="tags">${item.keywords.map(k => `<span class="tag">${k}</span>`).join('')}</div>` : '';
 
         card.innerHTML = `
             <div class="card-img" style="background-image: url('${item.image}')"></div>
@@ -48,7 +46,6 @@ export function renderGrid(items) {
                     </span>
                 </div>
                 ${summaryHtml}
-                ${keywordsHtml}
                 <div class="card-actions">
                     <button class="card-btn download-btn" title="Download image" data-image="${item.image}" data-filename="${filename}">
                         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
@@ -90,7 +87,7 @@ export function renderGrid(items) {
                 accountName: item.accountName,
                 accountId: item.accountId || null,
                 text: item.text, summary: item.summary,
-                hashtags: item.hashtags, keywords: item.keywords,
+                hashtags: item.hashtags,
                 tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
                 fingerprint: item.fingerprint,
                 albumId: item.albumId || null

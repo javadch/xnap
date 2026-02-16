@@ -73,7 +73,6 @@ body {
 .sidebar.collapsed h3,
 .sidebar.collapsed .date-filter,
 .sidebar.collapsed .facet-list,
-.sidebar.collapsed .keyword-cloud,
 .sidebar.collapsed .reset-btn {
     display: none;
 }
@@ -288,38 +287,6 @@ body {
     background-color: rgba(239, 243, 244, 0.1);
 }
 
-/* Keyword Cloud */
-.keyword-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
-    background-color: #202327;
-    border-radius: 8px;
-    margin-top: 10px;
-    max-height: 180px;
-    overflow-y: auto;
-    align-items: center;
-    justify-content: center;
-}
-.keyword-tag {
-    color: #8899a6;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    line-height: 1.2;
-}
-.keyword-tag:hover {
-    color: #1d9bf0;
-    background-color: rgba(29, 155, 240, 0.1);
-}
-.keyword-tag.active {
-    color: #1d9bf0;
-    background-color: rgba(29, 155, 240, 0.2);
-    font-weight: bold;
-}
-
 /* --- Main Gallery Styling --- */
 .gallery {
     flex: 1;
@@ -491,15 +458,7 @@ body {
     margin: 0;
 }
 
-/* Tags/Keywords */
-.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-.tag {
-    background-color: #1d9bf026; /* Transparent Blue */
-    color: #1d9bf0;
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
+
 
 /* Card Action Buttons */
 .card-actions {
@@ -826,8 +785,7 @@ a.card-btn {
 }
 
 /* Hashtag Chips */
-.hashtag-chips,
-.keyword-chips {
+.hashtag-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -840,10 +798,6 @@ a.card-btn {
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-}
-.chip.keyword-chip {
-    background-color: rgba(0, 186, 124, 0.15);
-    color: #00ba7c;
 }
 .no-data {
     color: #71767b;

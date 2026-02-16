@@ -283,7 +283,6 @@ async function handleTweetProcessing(data) {
         const record = {
             ...data,
             summary: data.summary || '',
-            keywords: data.keywords || [],
             savedAt: new Date().toISOString()
         };
 

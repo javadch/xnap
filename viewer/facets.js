@@ -1,18 +1,18 @@
-// viewer/facets.js — Hashtag, account, and keyword cloud rendering
+// viewer/facets.js — Hashtag, account, and category facet rendering
 
-import { activeFilters, aiEnabled } from './state.js';
+import { activeFilters } from './state.js';
 
 let applyFiltersFn = null;
 export function setApplyFilters(fn) { applyFiltersFn = fn; }
 
 /**
  * @param {object} facetItems - Per-facet cross-filtered item sets:
- *   { hashtagItems, accountItems, keywordItems }
+ *   { hashtagItems, accountItems, categoryItems }
  */
-export function renderFacets({ hashtagItems, accountItems, keywordItems }) {
+export function renderFacets({ hashtagItems, accountItems, categoryItems }) {
     const hashtagList = document.getElementById('hashtagList');
     const accountList = document.getElementById('accountList');
-    const keywordCloud = document.getElementById('keywordCloud');
+    const categoryList = document.getElementById('categoryList');
 
     // ── Hashtags ──
     const tagMap = {};
@@ -89,38 +89,36 @@ export function renderFacets({ hashtagItems, accountItems, keywordItems }) {
         });
     });
 
-    // ── Keywords Cloud ──
-    if (!aiEnabled) {
-        keywordCloud.innerHTML = '<span class="no-data">AI disabled</span>';
-        activeFilters.keyword = null;
+    // ── Categories (hashtags from notes) ──
+    const categoryMap = {};
+    categoryItems.forEach(item => {
+        if (item.categories) {
+            item.categories.forEach(cat => { categoryMap[cat] = (categoryMap[cat] || 0) + 1; });
+        }
+    });
+    const sortedCategories = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+
+    if (sortedCategories.length === 0) {
+        categoryList.innerHTML = '<span class="no-data">Use #hashtags in notes to create categories</span>';
     } else {
-        const keywordMap = {};
-        keywordItems.forEach(item => {
-            if (item.keywords) {
-                item.keywords.forEach(keyword => { keywordMap[keyword] = (keywordMap[keyword] || 0) + 1; });
-            }
-        });
-        const sortedKeywords = Object.entries(keywordMap).sort((a, b) => b[1] - a[1]);
-        const maxCount = sortedKeywords.length > 0 ? sortedKeywords[0][1] : 1;
-        const minCount = sortedKeywords.length > 0 ? sortedKeywords[sortedKeywords.length - 1][1] : 1;
+        categoryList.innerHTML = sortedCategories.map(([cat, count]) => `
+            <div class="facet-item category-facet" data-category="${cat}">
+                <span class="facet-content">${cat}</span>
+                <span class="count">${count}</span>
+            </div>
+        `).join('');
 
-        keywordCloud.innerHTML = sortedKeywords.map(([keyword, count]) => {
-            const sizeRange = maxCount - minCount || 1;
-            const size = 12 + ((count - minCount) / sizeRange) * 12;
-            return `<span class="keyword-tag" data-keyword="${keyword}" style="font-size: ${size}px;">${keyword}</span>`;
-        }).join('');
-
-        if (activeFilters.keyword) {
-            const el = document.querySelector(`.keyword-tag[data-keyword="${activeFilters.keyword}"]`);
+        if (activeFilters.category) {
+            const el = document.querySelector(`.category-facet[data-category="${activeFilters.category}"]`);
             if (el) el.classList.add('active');
         }
 
-        document.querySelectorAll('.keyword-tag').forEach(el => {
+        document.querySelectorAll('.category-facet').forEach(el => {
             el.addEventListener('click', () => {
-                const keyword = el.getAttribute('data-keyword');
+                const cat = el.getAttribute('data-category');
                 const isActive = el.classList.contains('active');
-                document.querySelectorAll('.keyword-tag').forEach(e => e.classList.remove('active'));
-                activeFilters.keyword = isActive ? null : keyword;
+                document.querySelectorAll('.category-facet').forEach(e => e.classList.remove('active'));
+                activeFilters.category = isActive ? null : cat;
                 if (!isActive) el.classList.add('active');
                 if (applyFiltersFn) applyFiltersFn();
             });

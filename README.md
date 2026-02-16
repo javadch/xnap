@@ -9,7 +9,7 @@ A Chrome extension for capturing, archiving, and organizing tweets (posts) from 
 - **Cancel & limit** — Cancel a running batch capture at any time. Set a maximum number of tweets to capture per page in Settings.
 - **Local storage** — All data is stored in the browser's IndexedDB. Nothing leaves your machine unless you export or back it up.
 - **Gallery viewer** — A built-in viewer with grid layout, full-size modal preview, and sidebar filters. Click the extension icon to open it.
-- **Search & filter** — Filter snapshots by text, account, hashtag, keyword, date range, or album. Facets are cross-filtered — selecting one facet updates the options shown in the others.
+- **Search & filter** — Filter snapshots by text, account, hashtag, category, date range, or album. Facets are cross-filtered — selecting one facet updates the options shown in the others.
 - **Albums** — Organize snapshots into albums. Batch captures automatically create an album (lazily — only when the first tweet is actually captured).
 - **Backup & restore** — Full database backup as a `.zip` file (images stored as separate PNGs with DEFLATE compression). Restore from backup with optional overwrite of existing snapshots.
 - **ZIP export** — Export filtered snapshots as a `.zip` file containing PNG images, metadata JSON, album records, and a manifest.
@@ -17,7 +17,7 @@ A Chrome extension for capturing, archiving, and organizing tweets (posts) from 
 - **Notes** — Add an optional note to any snapshot from the modal view. Notes auto-save on blur.
 - **Share** — Share any snapshot via Telegram (Web Share API with clipboard + file fallback).
 - **JSON metadata copy** — Copy a snapshot's full metadata as JSON to the clipboard from the modal or grid card.
-- **AI enrichment** *(optional)* — Enable AI-powered summaries and keyword extraction via an API key (configured in Settings).
+- **AI enrichment** *(optional)* — Enable AI-powered summaries via an API key (configured in Settings).
 - **Duplicate detection** — Each snapshot is fingerprinted (SHA-256) for authenticity and duplicate checks.
 - **Embedded provenance** — Every screenshot is stamped with XMP and PNG text metadata (author, tweet text, capture time, SHA-256 fingerprint, source URL). Metadata is visible in Windows Properties → Details, macOS Get Info, and any tool that reads XMP (Photoshop, GIMP, ExifTool).
 
@@ -64,14 +64,14 @@ Click the **Xnap** toolbar icon to open the gallery viewer in a new tab. All act
 ### Browsing & filtering
 
 - **Search** — Type in the search box to find tweets by text, account, URL, timestamp, or fingerprint.
-- **Facets** — Click an account handle, hashtag, or keyword in the sidebar to filter. Facets cross-filter: selecting an account updates the hashtag and keyword lists to show only what's relevant.
+- **Facets** — Click an account handle, hashtag, or category in the sidebar to filter. Facets cross-filter: selecting one facet updates the others to show only what's relevant.
 - **Date range** — Use the date pickers in the sidebar to narrow by capture date.
 - **Albums** — Click an album in the sidebar to view only its snapshots. Use Ctrl+Click to select multiple albums.
 - **Reset** — Click the refresh button next to "Xnap" in the sidebar to clear all filters.
 
 ### Viewing a snapshot
 
-Click any snapshot card in the grid to open a full-size modal showing the screenshot and all associated metadata (display name, @handle, text, hashtags, keywords, timestamps, URL, SHA-256 fingerprint). You can also add or edit an optional **note** — it auto-saves when you click away.
+Click any snapshot card in the grid to open a full-size modal showing the screenshot and all associated metadata (display name, @handle, text, hashtags, timestamps, URL, SHA-256 fingerprint). You can also add or edit an optional **note** — it auto-saves when you click away.
 
 **Action buttons** (available on both the modal and grid cards):
 
@@ -117,7 +117,7 @@ From the gear menu, choose **Settings** to configure:
 
 | Setting | Description |
 |---------|-------------|
-| **Enable AI** | Toggle AI-powered summaries and keyword extraction |
+| **Enable AI** | Toggle AI-powered summaries |
 | **AI API Key** | API key for the AI service (stored locally, never shared) |
 | **Max tweets per page** | Limit tweets captured per Snap Page action (0 = unlimited) |
 | **Copyright Text** | Custom copyright line embedded in every screenshot's metadata |
@@ -143,7 +143,7 @@ Each snapshot stores:
 | `capturedAtUTC` | When the snapshot was taken (ISO 8601) |
 | `fingerprint` | SHA-256 hash of the tweet content for integrity/dedup |
 | `summary` | AI-generated summary (if enabled) |
-| `keywords` | AI-generated keywords (if enabled) |
+
 | `albumId` | Album this snapshot belongs to (if any) |
 | `note` | Optional user note (free text) |
 | `image` | Screenshot as a data URL |
@@ -206,7 +206,7 @@ xnap/
     ├── state.js         # Shared state, filter logic, data normalization
     ├── grid.js          # Grid card rendering with action buttons
     ├── modal.js         # Full-size snapshot modal with action buttons
-    ├── facets.js        # Sidebar facets (accounts, hashtags, keywords) with cross-filtering
+    ├── facets.js        # Sidebar facets (accounts, hashtags, categories) with cross-filtering
     ├── albums.js        # Album management
     ├── export.js        # ZIP export
     ├── toolbar.js       # Gear menu + action dialogs (Snap, Backup, Restore, Settings)

@@ -17,10 +17,6 @@ export function openModal(item) {
         ? item.hashtags.map(tag => `<span class="chip">${tag}</span>`).join('')
         : '<span class="no-data">No hashtags</span>';
 
-    const keywordChips = aiEnabled && item.keywords && item.keywords.length > 0
-        ? item.keywords.map(k => `<span class="chip keyword-chip">${k}</span>`).join('')
-        : '';
-
     const fingerprintDisplay = item.fingerprint || 'N/A';
 
     const aiSummarySection = aiEnabled ? `
@@ -29,14 +25,6 @@ export function openModal(item) {
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
                 </div>
                 <p class="section-content">${item.summary || '<span class="no-data">No summary</span>'}</p>
-            </div>` : '';
-
-    const aiKeywordsSection = aiEnabled && keywordChips ? `
-            <div class="modal-section">
-                <div class="section-icon" title="Categories">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
-                </div>
-                <div class="section-content keyword-chips">${keywordChips}</div>
             </div>` : '';
 
     modalBody.innerHTML = `
@@ -89,12 +77,11 @@ export function openModal(item) {
                 <div class="section-content hashtag-chips">${hashtagChips}</div>
             </div>
             ${aiSummarySection}
-            ${aiKeywordsSection}
             <div class="modal-section modal-note-section">
                 <div class="section-icon" title="Note">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                 </div>
-                <textarea class="note-input" placeholder="Add a note…" rows="2">${item.note ? item.note.replace(/</g, '&lt;') : ''}</textarea>
+                <textarea class="note-input" placeholder="Add a note… Use #hashtags to categorize" rows="2">${item.note ? item.note.replace(/</g, '&lt;') : ''}</textarea>
             </div>
         </div>
         <div class="modal-footer">
@@ -108,14 +95,20 @@ export function openModal(item) {
         </div>
     `;
 
-    // Note auto-save on blur
+    // Note auto-save on blur — extract #hashtags as categories
     const noteInput = modalBody.querySelector('.note-input');
     noteInput.addEventListener('blur', async () => {
         const newNote = noteInput.value.trim();
-        if (newNote !== (item.note || '')) {
+        const noteChanged = newNote !== (item.note || '');
+        // Extract hashtags from note as categories
+        const newCategories = newNote.match(/#[\p{L}\p{N}_]+/gu) || [];
+        const categoriesChanged = JSON.stringify(newCategories) !== JSON.stringify(item.categories || []);
+        if (noteChanged || categoriesChanged) {
             item.note = newNote || undefined;
+            item.categories = newCategories.length > 0 ? newCategories : undefined;
             await saveSnapshot(item);
             updateDataItem(item);
+            document.dispatchEvent(new CustomEvent('snapshot-updated'));
         }
     });
 
@@ -140,11 +133,12 @@ export function openModal(item) {
             accountName: item.accountName,
             accountId: item.accountId || null,
             text: item.text, summary: item.summary,
-            hashtags: item.hashtags, keywords: item.keywords,
+            hashtags: item.hashtags,
             tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
             fingerprint: item.fingerprint,
             albumId: item.albumId || null,
-            note: item.note || undefined
+            note: item.note || undefined,
+            categories: item.categories || undefined
         };
         try {
             await navigator.clipboard.writeText(JSON.stringify(record, null, 2));

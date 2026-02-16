@@ -12,7 +12,7 @@ export const activeFilters = {
     dateTo: null,
     account: null,
     hashtag: null,
-    keyword: null,
+    category: null,
     albumIds: new Set(['individual'])  // multi-select: Set of album IDs
 };
 
@@ -52,7 +52,7 @@ export function resetFilters() {
     activeFilters.dateTo = null;
     activeFilters.account = null;
     activeFilters.hashtag = null;
-    activeFilters.keyword = null;
+    activeFilters.category = null;
     activeFilters.albumIds = new Set(['individual']);
 }
 
@@ -115,7 +115,7 @@ export function getFilteredItems() {
             const handle = (item.accountHandle || '').toLowerCase();
             const name = (item.accountName || '').toLowerCase();
             const hashtagMatch = item.hashtags && item.hashtags.some(t => t.toLowerCase().includes(query));
-            const keywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
+            const categoryMatch = item.categories && item.categories.some(c => c.toLowerCase().includes(query));
             const url = (item.url || '').toLowerCase();
             const tweetTime = (item.tweetTimeUTC || '').toLowerCase();
             const capturedAt = (item.capturedAtUTC || '').toLowerCase();
@@ -123,7 +123,7 @@ export function getFilteredItems() {
 
             return text.includes(query) || summary.includes(query) ||
                    handle.includes(query) || name.includes(query) ||
-                   hashtagMatch || keywordMatch || url.includes(query) ||
+                   hashtagMatch || categoryMatch || url.includes(query) ||
                    tweetTime.includes(query) || capturedAt.includes(query) || fingerprint.includes(query);
         });
     }
@@ -146,9 +146,9 @@ export function getFilteredItems() {
         filtered = filtered.filter(item => item.hashtags && item.hashtags.includes(activeFilters.hashtag));
     }
 
-    // Keyword
-    if (activeFilters.keyword) {
-        filtered = filtered.filter(item => item.keywords && item.keywords.includes(activeFilters.keyword));
+    // Category
+    if (activeFilters.category) {
+        filtered = filtered.filter(item => item.categories && item.categories.includes(activeFilters.category));
     }
 
     return filtered;
@@ -158,7 +158,7 @@ export function getFilteredItems() {
  * Return items filtered by all active filters EXCEPT the specified facet.
  * Used for cross-filtering: each facet sees items constrained by all other facets,
  * so its options reflect only what's available given the other selections.
- * @param {'account'|'hashtag'|'keyword'} excludeFacet
+ * @param {'account'|'hashtag'|'category'} excludeFacet
  */
 export function getFilteredItemsExcluding(excludeFacet) {
     let filtered = getAlbumScopedItems();
@@ -172,7 +172,7 @@ export function getFilteredItemsExcluding(excludeFacet) {
             const handle = (item.accountHandle || '').toLowerCase();
             const name = (item.accountName || '').toLowerCase();
             const hashtagMatch = item.hashtags && item.hashtags.some(t => t.toLowerCase().includes(query));
-            const keywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
+            const categoryMatch = item.categories && item.categories.some(c => c.toLowerCase().includes(query));
             const url = (item.url || '').toLowerCase();
             const tweetTime = (item.tweetTimeUTC || '').toLowerCase();
             const capturedAt = (item.capturedAtUTC || '').toLowerCase();
@@ -180,7 +180,7 @@ export function getFilteredItemsExcluding(excludeFacet) {
 
             return text.includes(query) || summary.includes(query) ||
                    handle.includes(query) || name.includes(query) ||
-                   hashtagMatch || keywordMatch || url.includes(query) ||
+                   hashtagMatch || categoryMatch || url.includes(query) ||
                    tweetTime.includes(query) || capturedAt.includes(query) || fingerprint.includes(query);
         });
     }
@@ -203,9 +203,9 @@ export function getFilteredItemsExcluding(excludeFacet) {
         filtered = filtered.filter(item => item.hashtags && item.hashtags.includes(activeFilters.hashtag));
     }
 
-    // Keyword (skip if excluded)
-    if (excludeFacet !== 'keyword' && activeFilters.keyword) {
-        filtered = filtered.filter(item => item.keywords && item.keywords.includes(activeFilters.keyword));
+    // Category (skip if excluded)
+    if (excludeFacet !== 'category' && activeFilters.category) {
+        filtered = filtered.filter(item => item.categories && item.categories.includes(activeFilters.category));
     }
 
     return filtered;

@@ -45,7 +45,6 @@ export async function handleExport() {
         if (activeFilters.search) manifest.filters.search = activeFilters.search;
         if (activeFilters.account) manifest.filters.account = activeFilters.account;
         if (activeFilters.hashtag) manifest.filters.hashtag = activeFilters.hashtag;
-        if (activeFilters.keyword) manifest.filters.keyword = activeFilters.keyword;
         if (activeFilters.dateFrom) manifest.filters.dateFrom = activeFilters.dateFrom.toISOString().split('T')[0];
         if (activeFilters.dateTo) manifest.filters.dateTo = activeFilters.dateTo.toISOString().split('T')[0];
 
@@ -62,12 +61,13 @@ export async function handleExport() {
                 accountName: item.accountName,
                 accountId: item.accountId || null,
                 text: item.text, summary: item.summary,
-                hashtags: item.hashtags, keywords: item.keywords,
+                hashtags: item.hashtags,
                 tweetTimeUTC: item.tweetTimeUTC, capturedAtUTC: item.capturedAtUTC,
                 fingerprint: item.fingerprint,
                 albumId: item.albumId || null
             };
             if (item.note) entry.note = item.note;
+            if (item.categories && item.categories.length > 0) entry.categories = item.categories;
             metadata.push(entry);
         }
 

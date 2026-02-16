@@ -45,7 +45,7 @@ function applyFilters() {
     renderFacets({
         hashtagItems: getFilteredItemsExcluding('hashtag'),
         accountItems: getFilteredItemsExcluding('account'),
-        keywordItems: getFilteredItemsExcluding('keyword')
+        categoryItems: getFilteredItemsExcluding('category')
     });
     renderAlbumList();
 }
@@ -55,8 +55,9 @@ setGridApply(applyFilters);
 setFacetsApply(applyFilters);
 setAlbumsApply(applyFilters);
 
-// Refresh grid when a snapshot is deleted from the modal
+// Refresh grid when a snapshot is deleted or updated from the modal
 document.addEventListener('snapshot-deleted', () => applyFilters());
+document.addEventListener('snapshot-updated', () => applyFilters());
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
 
@@ -231,7 +232,7 @@ deleteAllBtn.addEventListener('click', async () => {
             // Clear facet filters so the remaining album content is fully visible
             activeFilters.account = null;
             activeFilters.hashtag = null;
-            activeFilters.keyword = null;
+            activeFilters.category = null;
             applyFilters();
             alert(`${count} snapshot${count !== 1 ? 's' : ''} deleted.`);
         } catch (err) {
