@@ -12,8 +12,12 @@
     "host_permissions": [
         "<all_urls>"
     ],
+    "icons": {
+        "128": "icon128.png"
+    },
     "action": {
-        "default_title": "Open Xnap"
+        "default_title": "Open Xnap",
+        "default_icon": "icon128.png"
     },
     "background": {
         "service_worker": "background.js",
