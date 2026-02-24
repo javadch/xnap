@@ -23,7 +23,11 @@ A Chrome extension for capturing, archiving, and organizing tweets (posts) from 
 
 ## Installation
 
-Xnap is not published on the Chrome Web Store. Install it as an unpacked extension:
+### Option 1: Chrome Web Store (recommended)
+
+Install Xnap directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/xnap/baloiepjohdmkahecbmdnkcfehbkdfgp).
+
+### Option 2: Manual installation (developer mode)
 
 1. **Clone or download** this repository:
    ```
@@ -77,11 +81,11 @@ Click any snapshot card in the grid to open a full-size modal showing the screen
 
 | Button | Action |
 |--------|--------|
-| ⬇ Download | Save the screenshot as a PNG file |
-| { } JSON | Copy full metadata as JSON to the clipboard |
-| ✈ Telegram | Share the snapshot via Telegram |
-| 𝕏 Original | Open the original tweet on X.com |
-| 🗑 Delete | Delete the snapshot |
+| Download | Save the screenshot as a PNG file |
+| JSON | Copy full metadata as JSON to the clipboard |
+| Telegram | Share the snapshot via Telegram |
+| Original | Open the original tweet on X.com |
+| Delete | Delete the snapshot |
 
 ### Exporting
 
@@ -192,27 +196,32 @@ Readable by Photoshop, GIMP, ExifTool, XnView, and any XMP-aware tool.
 ```
 xnap/
 ├── manifest.json        # Chrome extension manifest (MV3)
-├── background.js        # Service worker: screenshot capture, batch orchestration, backup/restore
-├── content.js           # Content script injected on X.com: clip buttons, tweet extraction
-├── db.js                # IndexedDB wrapper (snapshots & albums)
-├── xmp.js               # PNG metadata embedding (XMP + tEXt chunks)
-├── viewer.html / .js    # Gallery viewer entry point
-├── styles.css           # Viewer styles
-├── lib/
-│   ├── html2canvas.min.js   # Screenshot rendering library
-│   ├── jszip.min.js         # ZIP generation library (UMD)
-│   └── jszip.esm.js         # ESM wrapper for service worker import
-└── viewer/
-    ├── state.js         # Shared state, filter logic, data normalization
-    ├── grid.js          # Grid card rendering with action buttons
-    ├── modal.js         # Full-size snapshot modal with action buttons
-    ├── facets.js        # Sidebar facets (accounts, hashtags, categories) with cross-filtering
-    ├── albums.js        # Album management
-    ├── export.js        # ZIP export
-    ├── toolbar.js       # Gear menu + action dialogs (Snap, Backup, Restore, Settings)
-    ├── sidebar.js       # Sidebar resize & toggle
-    ├── share.js         # Telegram sharing
-    └── utils.js         # Filename generation
+├── viewer.html          # Gallery viewer entry point
+├── assets/
+│   └── xnap128.png      # Extension icon
+├── css/
+│   └── styles.css       # Viewer styles
+├── js/
+│   ├── background.js    # Service worker: screenshot capture, batch orchestration, backup/restore
+│   ├── content.js       # Content script injected on X.com: clip buttons, tweet extraction
+│   ├── db.js            # IndexedDB wrapper (snapshots & albums)
+│   ├── xmp.js           # PNG metadata embedding (XMP + tEXt chunks)
+│   ├── viewer.js        # Gallery viewer main script
+│   ├── state.js         # Shared state, filter logic, data normalization
+│   ├── grid.js          # Grid card rendering with action buttons
+│   ├── modal.js         # Full-size snapshot modal with action buttons
+│   ├── facets.js        # Sidebar facets (accounts, hashtags, categories) with cross-filtering
+│   ├── albums.js        # Album management
+│   ├── batch.js         # Batch capture handler with progress UI
+│   ├── export.js        # ZIP export
+│   ├── toolbar.js       # Gear menu + action dialogs (Snap, Backup, Restore, Settings)
+│   ├── sidebar.js       # Sidebar resize & toggle
+│   ├── share.js         # Telegram sharing
+│   └── utils.js         # Filename generation
+└── lib/
+    ├── html2canvas.min.js   # Screenshot rendering library
+    ├── jszip.min.js         # ZIP generation library (UMD)
+    └── jszip.esm.js         # ESM wrapper for service worker import
 ```
 
 ## Requirements
@@ -222,4 +231,4 @@ xnap/
 
 ## License
 
-This project is provided as-is for personal use.
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0-only). See LICENSE for details.
