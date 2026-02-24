@@ -1,6 +1,6 @@
 // viewer/toolbar.js — Gear menu + action dialogs (Snap, Backup, Restore, Settings)
 
-import { getAllSnapshots, getAllAlbums } from '../db.js';
+import { getAllSnapshots, getAllAlbums } from './db.js';
 
 // ─── Gear Menu ───────────────────────────────────────────────────────────────
 

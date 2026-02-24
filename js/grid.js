@@ -4,7 +4,7 @@ import { allData, aiEnabled, getAlbumScopedItems } from './state.js';
 import { generateFilename } from './utils.js';
 import { openModal } from './modal.js';
 import { shareViaTelegram } from './share.js';
-import { deleteSnapshot } from '../db.js';
+import { deleteSnapshot } from './db.js';
 import { removeDataItem } from './state.js';
 
 let applyFiltersFn = null;

@@ -1,7 +1,7 @@
 // viewer/albums.js — Album list rendering and management
 
 import { allData, allAlbums, activeFilters, removeAlbumData } from './state.js';
-import { deleteSnapshot, deleteAlbum } from '../db.js';
+import { deleteSnapshot, deleteAlbum } from './db.js';
 
 let applyFiltersFn = null;
 export function setApplyFilters(fn) { applyFiltersFn = fn; }

@@ -3,7 +3,7 @@
 import { aiEnabled, removeDataItem, updateDataItem } from './state.js';
 import { generateFilename } from './utils.js';
 import { shareViaTelegram } from './share.js';
-import { deleteSnapshot, saveSnapshot } from '../db.js';
+import { deleteSnapshot, saveSnapshot } from './db.js';
 
 const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modalBody');

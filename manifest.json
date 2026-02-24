@@ -13,14 +13,14 @@
         "<all_urls>"
     ],
     "icons": {
-        "128": "icon128.png"
+        "128": "assets/icon128.png"
     },
     "action": {
         "default_title": "Open Xnap",
-        "default_icon": "icon128.png"
+        "default_icon": "assets/icon128.png"
     },
     "background": {
-        "service_worker": "background.js",
+        "service_worker": "js/background.js",
         "type": "module"
     },
     "content_scripts": [
@@ -31,7 +31,7 @@
             ],
             "js": [
                 "lib/html2canvas.min.js",
-                "content.js"
+                "js/content.js"
             ]
         }
     ]

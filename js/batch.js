@@ -1,6 +1,6 @@
 // viewer/batch.js — Batch capture handler with progress UI
 
-import { saveAlbum, getAllAlbums } from '../db.js';
+import { saveAlbum, getAllAlbums } from './db.js';
 import { setAllAlbums } from './state.js';
 import { renderAlbumList } from './albums.js';
 

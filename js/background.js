@@ -1,6 +1,6 @@
 import { saveSnapshot, saveAlbum, getAllSnapshots, getAllAlbums } from './db.js';
 import { embedPngMetadata } from './xmp.js';
-import JSZip from './lib/jszip.esm.js';
+import JSZip from '../lib/jszip.esm.js';
 
 let batchCancelled = false;
 

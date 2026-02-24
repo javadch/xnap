@@ -6,14 +6,14 @@ import {
     allData, activeFilters,
     setAllData, setAllAlbums, setAiEnabled,
     resetFilters, getFilteredItems, getAlbumScopedItems, getFilteredItemsExcluding
-} from './viewer/state.js';
-import { renderGrid, setApplyFilters as setGridApply } from './viewer/grid.js';
-import { initModal } from './viewer/modal.js';
-import { renderFacets, setApplyFilters as setFacetsApply } from './viewer/facets.js';
-import { renderAlbumList, handleDeleteAlbum, setApplyFilters as setAlbumsApply } from './viewer/albums.js';
-import { handleExport } from './viewer/export.js';
-import { initSidebar } from './viewer/sidebar.js';
-import { initToolbar } from './viewer/toolbar.js';
+} from './state.js';
+import { renderGrid, setApplyFilters as setGridApply } from './grid.js';
+import { initModal } from './modal.js';
+import { renderFacets, setApplyFilters as setFacetsApply } from './facets.js';
+import { renderAlbumList, handleDeleteAlbum, setApplyFilters as setAlbumsApply } from './albums.js';
+import { handleExport } from './export.js';
+import { initSidebar } from './sidebar.js';
+import { initToolbar } from './toolbar.js';
 
 // ─── DOM References ──────────────────────────────────────────────────────────
 
