@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Xnap",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "permissions": [
         "activeTab",
         "scripting",
@@ -13,11 +13,11 @@
         "<all_urls>"
     ],
     "icons": {
-        "128": "assets/icon128.png"
+        "128": "assets/xnap128.png"
     },
     "action": {
-        "default_title": "Open Xnap",
-        "default_icon": "assets/icon128.png"
+        "default_title": "Xnap",
+        "default_icon": "assets/xnap128.png"
     },
     "background": {
         "service_worker": "js/background.js",
