@@ -13,6 +13,7 @@ import { renderFacets, setApplyFilters as setFacetsApply } from './facets.js';
 import { renderAlbumList, handleDeleteAlbum, setApplyFilters as setAlbumsApply } from './albums.js';
 import { handleExport } from './export.js';
 import { initSidebar } from './sidebar.js';
+import { initShareDropdowns } from './share.js';
 import { initToolbar } from './toolbar.js';
 
 // ─── DOM References ──────────────────────────────────────────────────────────
@@ -299,4 +300,5 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 initModal();
 initSidebar();
+initShareDropdowns();
 initToolbar();

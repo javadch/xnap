@@ -2,7 +2,7 @@
 
 import { aiEnabled, removeDataItem, updateDataItem } from './state.js';
 import { generateFilename } from './utils.js';
-import { shareViaTelegram } from './share.js';
+import { shareViaTelegram, shareViaOS, setupImageDragShare } from './share.js';
 import { deleteSnapshot, saveSnapshot } from './db.js';
 
 const modal = document.getElementById('modal');
@@ -49,9 +49,22 @@ export function openModal(item) {
                 <button class="modal-action-btn json-btn" title="Copy JSON metadata">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M5 3h2v2H5v5a2 2 0 01-2 2 2 2 0 012 2v5h2v2H5c-1.07-.27-2-.9-2-2v-4a2 2 0 00-2-2H0v-2h1a2 2 0 002-2V5a2 2 0 012-2m14 0a2 2 0 012 2v4a2 2 0 002 2h1v2h-1a2 2 0 00-2 2v4a2 2 0 01-2 2h-2v-2h2v-5a2 2 0 012-2 2 2 0 01-2-2V5h-2V3h2z"/></svg>
                 </button>
-                <button class="modal-action-btn share-btn" data-id="${item.id}" title="Share via Telegram">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-                </button>
+                <div class="share-dropdown">
+                    <button class="modal-action-btn share-btn share-dropdown-toggle" data-id="${item.id}" title="Share">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                        <svg class="share-caret" viewBox="0 0 24 24" width="10" height="10"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                    </button>
+                    <div class="share-dropdown-menu">
+                        <button class="share-menu-item share-telegram-opt" title="Telegram Web must be open with a chat selected">
+                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                            <span>Telegram Web</span>
+                        </button>
+                        <button class="share-menu-item share-os-opt">
+                            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                            <span>More Apps</span>
+                        </button>
+                    </div>
+                </div>
                 <a href="${item.url}" target="_blank" class="modal-action-btn" title="View original tweet">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 </a>
@@ -120,8 +133,12 @@ export function openModal(item) {
             .then(blob => {
                 const file = new File([blob], filename, { type: blob.type });
                 modalImg.src = URL.createObjectURL(file);
+                // Enable drag-to-Telegram: dragging copies caption to clipboard
+                setupImageDragShare(modalImg, item);
             })
             .catch(() => {}); // keep data URL as fallback
+    } else {
+        setupImageDragShare(modalImg, item);
     }
 
     // JSON copy button
@@ -164,9 +181,22 @@ export function openModal(item) {
         document.body.removeChild(link);
     });
 
-    // Share button
-    const shareBtn = modalBody.querySelector('.share-btn');
-    shareBtn.addEventListener('click', () => shareViaTelegram(item));
+    // Share dropdown
+    const shareDropdown = modalBody.querySelector('.share-dropdown');
+    shareDropdown.querySelector('.share-dropdown-toggle').addEventListener('click', () => {
+        document.querySelectorAll('.share-dropdown.open').forEach(d => {
+            if (d !== shareDropdown) d.classList.remove('open');
+        });
+        shareDropdown.classList.toggle('open');
+    });
+    shareDropdown.querySelector('.share-telegram-opt').addEventListener('click', () => {
+        shareDropdown.classList.remove('open');
+        shareViaTelegram(item);
+    });
+    shareDropdown.querySelector('.share-os-opt').addEventListener('click', () => {
+        shareDropdown.classList.remove('open');
+        shareViaOS(item);
+    });
 
     // Delete button
     const deleteBtn = modalBody.querySelector('.delete-btn');

@@ -49,6 +49,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         handleRestore(request.dataUrl, request.overwrite, sendResponse);
         return true;
     }
+    if (request.action === "share_to_telegram_web") {
+        handleShareToTelegramWeb(request.payload, sendResponse);
+        return true;
+    }
     return true;
 });
 
@@ -731,5 +735,194 @@ async function handleRestore(dataUrl, overwrite, sendResponse) {
     } catch (error) {
         console.error('[Xnap] Restore failed:', error);
         sendResponse({ success: false, error: error.message });
+    }
+}
+
+// ─── Share to Telegram Web ───────────────────────────────────────────────────
+// Finds or opens a Telegram Web tab, then injects a script that pastes the
+// snapshot image + caption into the currently open chat.
+
+const TG_WEB_PATTERNS = [
+    'https://web.telegram.org/a/*',
+    'https://web.telegram.org/k/*',
+    'https://web.telegram.org/*'
+];
+
+async function findTelegramWebTab() {
+    for (const pattern of TG_WEB_PATTERNS) {
+        const tabs = await chrome.tabs.query({ url: pattern });
+        if (tabs.length > 0) return tabs[0];
+    }
+    return null;
+}
+
+async function handleShareToTelegramWeb(payload, sendResponse) {
+    const { imageDataUrl, filename, caption } = payload;
+    console.log('[Xnap BG] handleShareToTelegramWeb called, caption length:', caption?.length, 'image length:', imageDataUrl?.length);
+
+    try {
+        // 1. Find an existing Telegram Web tab or open one
+        let tab = await findTelegramWebTab();
+        let needsLoad = false;
+
+        if (!tab) {
+            tab = await chrome.tabs.create({ url: 'https://web.telegram.org/a/', active: true });
+            needsLoad = true;
+        } else {
+            await chrome.tabs.update(tab.id, { active: true });
+            await chrome.windows.update(tab.windowId, { focused: true });
+        }
+
+        // 2. Wait for the tab to finish loading if we just created it
+        if (needsLoad) {
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    chrome.tabs.onUpdated.removeListener(listener);
+                    reject(new Error('Telegram Web load timeout'));
+                }, 30000);
+                const listener = (id, info) => {
+                    if (id === tab.id && info.status === 'complete') {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                };
+                chrome.tabs.onUpdated.addListener(listener);
+            });
+            // Extra wait for Telegram Web SPA to initialize
+            await new Promise(r => setTimeout(r, 4000));
+        } else {
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        // 3. Inject the paste script
+        console.log('[Xnap BG] Injecting into tab', tab.id, tab.url);
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            args: [imageDataUrl, filename, caption],
+            func: injectShareIntoTelegramWeb
+        });
+        console.log('[Xnap BG] Injection results:', JSON.stringify(results));
+
+        const result = results?.[0]?.result;
+        if (result && result.success) {
+            sendResponse({ success: true });
+        } else {
+            sendResponse({ success: false, error: result?.error || 'Injection failed' });
+        }
+    } catch (err) {
+        console.error('[Xnap] Share to Telegram Web failed:', err);
+        sendResponse({ success: false, error: err.message });
+    }
+}
+
+/**
+ * Injected into the Telegram Web tab.
+ * Converts the data URL to a File, then uses a synthetic paste event
+ * to inject the image into the chat. Fills caption after the send dialog opens.
+ *
+ * Strategy order:
+ *   1. ClipboardEvent paste on the message input (works in Chrome)
+ *   2. File input manipulation (fallback)
+ */
+function injectShareIntoTelegramWeb(imageDataUrl, filename, caption) {
+    try {
+        // ── Convert data URL to File ──
+        const parts = imageDataUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const binary = atob(parts[1]);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: mime });
+        const file = new File([blob], filename, { type: mime });
+
+        // ── Detect Telegram Web variant ──
+        // Web A: #editable-message-text, #MiddleColumn, #column-center
+        // Web K: .input-message-input, #column-center
+        const isWebA = !!document.querySelector('#editable-message-text, #MiddleColumn');
+
+        // ── Find the message input (proves a chat is open) ──
+        const messageInput =
+            document.querySelector('#editable-message-text') ||         // Web A
+            document.querySelector('.input-message-input') ||           // Web K
+            document.querySelector('[contenteditable="true"]');          // Generic
+
+        if (!messageInput) {
+            return { success: false, error: 'No chat is open in Telegram Web. Please open a chat first.' };
+        }
+
+        // ── Strategy 1: Synthetic paste event ──
+        // Chrome allows ClipboardEvent constructor with custom clipboardData.
+        // Telegram Web listens for paste events on the document/input.
+        const dt = new DataTransfer();
+        dt.items.add(file);
+
+        const pasteEvent = new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData: dt
+        });
+
+        messageInput.focus();
+        // Telegram Web A listens on document; Web K on the input
+        const pasteTarget = isWebA ? document : messageInput;
+        const dispatched = pasteTarget.dispatchEvent(pasteEvent);
+
+        // ── Strategy 2 (fallback): Find and populate a file input ──
+        if (dispatched) {
+            // Paste was not preventDefault'd by any handler — check if it worked
+            // by waiting briefly for the send dialog to appear.
+            // If it doesn't appear, try the file input approach.
+        }
+
+        // ── Fill caption when the send dialog appears ──
+        let captionFilled = false;
+        const fillCaption = () => {
+            // Broad selector list covering Web A and Web K send-photo dialogs
+            const captionInputs = document.querySelectorAll(
+                // Web K selectors
+                '.popup-send-photo .input-message-input, ' +
+                '.popup-send-photo [contenteditable="true"], ' +
+                // Web A selectors
+                '[class*="SendMedia"] [contenteditable="true"], ' +
+                '.modal-dialog [contenteditable="true"], ' +
+                '.Modal [contenteditable="true"], ' +
+                // Generic: any new contenteditable in a modal/popup that isn't the main input
+                '.popup [contenteditable="true"]'
+            );
+
+            for (const input of captionInputs) {
+                // Skip the main message input — we want the caption field in the dialog
+                if (input === messageInput) continue;
+
+                input.focus();
+                // Clear existing content
+                input.textContent = '';
+                // Use execCommand for framework compatibility (React/Solid state sync)
+                document.execCommand('selectAll', false, null);
+                document.execCommand('insertText', false, caption);
+                // Also fire input event for frameworks that rely on it
+                input.dispatchEvent(new InputEvent('input', { bubbles: true, data: caption }));
+                captionFilled = true;
+                break;
+            }
+            return captionFilled;
+        };
+
+        // Try immediately, then watch for the dialog to appear
+        if (!fillCaption()) {
+            const observer = new MutationObserver(() => {
+                if (fillCaption()) {
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            // Give up after 8 seconds
+            setTimeout(() => observer.disconnect(), 8000);
+        }
+
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
     }
 }

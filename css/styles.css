@@ -393,11 +393,15 @@ body {
     background-color: #16181c;
     border: 1px solid #2f3336;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible;
     transition: transform 0.2s, border-color 0.2s;
     cursor: pointer;
     display: flex;
     flex-direction: column;
+}
+
+.card-img {
+    border-radius: 16px 16px 0 0;
 }
 
 .card:hover {
@@ -506,6 +510,99 @@ body {
 a.card-btn {
     text-decoration: none !important;
     color: #71767b;
+}
+
+/* ── Share Dropdown (card + modal) ── */
+.share-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+.share-dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 2px;
+}
+.share-caret {
+    opacity: 0.5;
+    margin-left: -2px;
+    flex-shrink: 0;
+}
+.share-dropdown-toggle:hover .share-caret { opacity: 1; }
+
+.share-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 500;
+    min-width: 150px;
+    background: #16181c;
+    border: 1px solid #2f3336;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    padding: 4px 0;
+    margin-top: 4px;
+}
+.share-dropdown.open .share-dropdown-menu { display: block; }
+
+.share-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #e7e9ea;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+.share-menu-item:first-child { border-radius: 10px 10px 0 0; }
+.share-menu-item:last-child { border-radius: 0 0 10px 10px; }
+.share-menu-item:hover { background-color: rgba(239, 243, 244, 0.1); }
+.share-menu-item svg { fill: currentColor; flex-shrink: 0; }
+.share-menu-item.share-telegram-opt { color: #29b6f6; }
+.share-menu-item.share-telegram-opt:hover { background-color: rgba(41, 182, 246, 0.12); }
+
+/* ── Share Toast (brief status) ── */
+.share-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    max-width: calc(100vw - 48px);
+    background: #16181c;
+    border: 1px solid #2f3336;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+.share-toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.share-toast-brief {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #00ba7c;
+}
+.share-toast-brief.share-toast-error {
+    color: #f4212e;
+}
+
+/* Drag hint on modal image */
+.modal-image-container img[draggable="true"] {
+    cursor: grab;
+}
+.modal-image-container img[draggable="true"]:active {
+    cursor: grabbing;
 }
 
 /* --- Modal Overlay --- */
